@@ -23,7 +23,7 @@ public:
 private:
 	RDFConstructor* constructor;
 
-	RDFEvent* createRDF(PubPkt* pkt);
+	RDFEvent* createRDF(PubPkt* pkt, Template* templateCE);
 	void notifyRDFListeners(RDFEvent* event);
 };
 #endif /*TREXLISTENER_H*/

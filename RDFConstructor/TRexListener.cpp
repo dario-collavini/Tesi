@@ -28,13 +28,12 @@ std::string getValue(Attribute att){
 	return result;
 }
 
-RDFEvent* TRexListener::createRDF(PubPkt* pkt){
+RDFEvent* TRexListener::createRDF(PubPkt* pkt, Template* templateCE){
 	RDFEvent* event = new RDFEvent;
 	Attribute att;
 	char* varName;
 
 	event->eventType = pkt->getEventType();
-	Template* templateCE = this->constructor->getRdfEventTemplates().find(pkt->getEventType())->second;
 	//TODO:attaccare prefissi sparql al pattern
 	for(std::vector<TripleTemplate>::iterator it =templateCE->triples.begin(); it != templateCE->triples.end(); it++){
 		Triple t;
@@ -74,29 +73,27 @@ void TRexListener::notifyRDFListeners(RDFEvent* event){
 }
 
 void TRexListener::handleResult(std::set<PubPkt *> &genPkts, double procTime){
-	bool isEventAll = false;
 	bool atLeastOneAll = false;
 	std::map<int, std::vector<PubPkt*>> typeOfGroupEvents;
 	std::map<int, Template*> templates = this->constructor->getRdfEventTemplates();
 	for (std::set<PubPkt*>::iterator i= genPkts.begin(); i != genPkts.end(); i++){
 		PubPkt* pubPkt= *i;
-		for(std::map<int, Template*>::iterator it = templates.begin(); it != templates.end(); it++){
-			int type = pubPkt->getEventType();
-			if(type == it->second->eventType && it->second->isRuleAllWithin){
-				if(typeOfGroupEvents.find(type) != typeOfGroupEvents.end()){
-					//nuovo tipo, aggiungi un vettore di eventi
-					std::vector<PubPkt*> eventsToGroup;
-					typeOfGroupEvents.insert(std::pair<int, std::vector<PubPkt*>>(type, eventsToGroup.push_back(pubPkt)));
-				}else{
-					//esiste già il tipo, aggiungilo al vettore esistente
-					typeOfGroupEvents.find(type)->second.push_back(pubPkt);
-				}
-				isEventAll = true;//rimando la creazione dell evento rdf a un'altra funzione...
-				atLeastOneAll = true;
+		int type = pubPkt->getEventType();
+		Template* templateCE = templates.find(type)->second;
+		if(templateCE->isRuleAllWithin == true){
+			atLeastOneAll = true;//per chiamare la funzione alla fine
+			if(typeOfGroupEvents.find(type) == typeOfGroupEvents.end()){
+				//nuovo tipo, aggiungi un vettore di eventi
+				std::vector<PubPkt*> eventsToGroup;
+				eventsToGroup.push_back(pubPkt);
+				typeOfGroupEvents.insert(std::pair<int, std::vector<PubPkt*>>(type, eventsToGroup));
+			}else{
+				//esiste già il tipo, aggiungilo al vettore esistente
+				typeOfGroupEvents.find(type)->second.push_back(pubPkt);
 			}
-		}
-		if(isEventAll == false){//pacchetto "singolo" (non ALL), genero RDF
-			RDFEvent *rdfEvent = createRDF(pubPkt);
+		}else{//la regola non è ALL
+			//pacchetto "singolo" (non ALL), genero RDF
+			RDFEvent *rdfEvent = createRDF(pubPkt, templateCE);
 			this->notifyRDFListeners(rdfEvent);
 			//notifica fatta, free memoria dell'evento (se il Listener vuole salvarselo lo copia quando lo riceve)
 			for(std::vector<Triple>::iterator it = rdfEvent->triples.begin(); it != rdfEvent->triples.end(); it++){
@@ -106,8 +103,7 @@ void TRexListener::handleResult(std::set<PubPkt *> &genPkts, double procTime){
 			}
 			delete rdfEvent;
 		}
-		isEventAll = false;//rinizializzata per il prossimo pacchetto
 	}
 	//TODO:prendi mappa di vettori e passala a funzione incaricata di produrre l'rdf ALL
-	//if(atLeastOneAll)createRDFAll(std::map<int, std::vector<PubPkt*>> typeOfGroupEvents);
+		//if(atLeastOneAll)createRDFAll(std::map<int, std::vector<PubPkt*>> typeOfGroupEvents);
 }
