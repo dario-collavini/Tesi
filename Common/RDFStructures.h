@@ -6,6 +6,11 @@
 #include <map>
 #include <string>
 
+enum IsVar{
+	NO_VAR = 0,
+	YES_VAR = 1
+};
+
 typedef struct SparqlQuery {
 	int eventType;
 	const char* queryName;
@@ -29,9 +34,9 @@ typedef struct SparqlAnswer {
 
 //1 se è 1 variabile, 0 se non lo è
 typedef struct RDFTripleTemplate {
-	std::pair<int, const char*> subject;
-	std::pair<int, const char*> predicate;
-	std::pair<int, const char*> object;
+	std::pair<IsVar, const char*> subject;
+	std::pair<IsVar, const char*> predicate;
+	std::pair<IsVar, const char*> object;
 } TripleTemplate;
 
 typedef struct RDFTemplate {

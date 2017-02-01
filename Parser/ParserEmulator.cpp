@@ -89,12 +89,12 @@ const char** ParserEmulator::parsePrefixesArray(){
 Template* ParserEmulator::parseTemplateCE(){
 	Template* templateCE = new Template;
 	TripleTemplate t1, t2;
-	t1.subject = std::make_pair(0, "a1:stanza");
-	t1.predicate = std::make_pair(0, "a1:is");
-	t1.object = std::make_pair(1, "?room");
-	t2.subject = std::make_pair(0, "a1:radiazioni");
-	t2.predicate = std::make_pair(0, "a1:is");
-	t2.object = std::make_pair(1, "?value");
+	t1.subject = std::make_pair(NO_VAR, "a1:stanza");
+	t1.predicate = std::make_pair(NO_VAR, "a1:is");
+	t1.object = std::make_pair(YES_VAR, "?room");
+	t2.subject = std::make_pair(NO_VAR, "a1:radiazioni");
+	t2.predicate = std::make_pair(NO_VAR, "a1:is");
+	t2.object = std::make_pair(YES_VAR, "?value");
 	templateCE->triples.push_back(t1);
 	templateCE->triples.push_back(t2);
 	
