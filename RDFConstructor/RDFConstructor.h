@@ -14,7 +14,7 @@ public:
 
 	ResultListener* getTRexListener(){return trexListener;}
 
-	std::map<int, Template*> getRdfEventTemplates(){return rdfEventTemplates;}
+	std::map<int, Template*> &getRdfEventTemplates(){return rdfEventTemplates;}
 
 	void addTemplate(int type, Template* templateCE) {rdfEventTemplates.insert(std::pair<int, Template*>(type, templateCE));}
 

@@ -32,7 +32,6 @@ typedef struct SparqlAnswer {
 	int prefixesLength;
 } Event;
 
-//1 se è 1 variabile, 0 se non lo è
 typedef struct RDFTripleTemplate {
 	std::pair<IsVar, const char*> subject;
 	std::pair<IsVar, const char*> predicate;
@@ -40,7 +39,10 @@ typedef struct RDFTripleTemplate {
 } TripleTemplate;
 
 typedef struct RDFTemplate {
+	int eventType;
+	bool isRuleAllWithin;
 	std::vector<TripleTemplate> triples;
+
 } Template;
 
 typedef struct RDFTriple {

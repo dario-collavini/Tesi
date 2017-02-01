@@ -88,6 +88,8 @@ const char** ParserEmulator::parsePrefixesArray(){
 
 Template* ParserEmulator::parseTemplateCE(){
 	Template* templateCE = new Template;
+	templateCE->eventType = 3;
+	templateCE->isRuleAllWithin = false;
 	TripleTemplate t1, t2;
 	t1.subject = std::make_pair(NO_VAR, "a1:stanza");
 	t1.predicate = std::make_pair(NO_VAR, "a1:is");
