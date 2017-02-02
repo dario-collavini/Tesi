@@ -36,6 +36,7 @@ typedef struct RDFTripleTemplate {
 	std::pair<IsVar, const char*> subject;
 	std::pair<IsVar, const char*> predicate;
 	std::pair<IsVar, const char*> object;
+	bool isPartOfAllWithin;
 } TripleTemplate;
 
 typedef struct RDFTemplate {
@@ -45,16 +46,24 @@ typedef struct RDFTemplate {
 
 } Template;
 
+typedef struct RDFDuplicateTriple {
+	char* subject;
+	char* predicate;
+	char* object;
+} DuplicateTriple;
+
 typedef struct RDFTriple {
 	char* subject;
 	char* predicate;
 	char* object;
+	std::vector<DuplicateTriple> duplicateTriples;
 } Triple;
 
 typedef struct ComplexEvent {
 	int eventType;
 	std::vector<Triple> triples;
-	std::map<std::string, Attribute> attributes; //per valutare i constraint delle subscription
+	unsigned int numOfDuplicateEvents;//serve solo per regole ALL
+	std::vector<std::map<std::string, Attribute>> attributes; //per valutare tutti i constraint
 } RDFEvent;
 
 #endif /*RDFSTRUCTURES_H*/

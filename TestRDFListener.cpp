@@ -129,8 +129,8 @@ bool matches(SubPkt* sub, RDFEvent* event){
 	if (event->eventType!=sub->getEventType()) return false;
 	for (int i=0; i<sub->getConstraintsNum(); i++){
 		Constraint constr= sub->getConstraint(i);
-		if(strcmp(event->attributes[constr.name].name, constr.name) != 0) return false;
-		if(!matches(constr, event->attributes[constr.name])) return false;
+		if(strcmp(event->attributes[0].find(constr.name)->second.name, constr.name) != 0) return false;
+		if(!matches(constr, event->attributes[0].find(constr.name)->second)) return false;
 	}
 	return true;
 }
@@ -138,21 +138,32 @@ bool matches(SubPkt* sub, RDFEvent* event){
 
 //la memoria relativa all'evento viene liberata, se voglio processare ulteriormente devo salvarmi una copia dell'evento
 void TestRDFListener::handleResult(RDFEvent* event){
-	if(matches(subscription, event)){	
-		printMessage("New complex event created:");
+	printMessage("New complex event created:");
+	std::cout <<"{";
+	for(std::vector<Triple>::iterator triple = event->triples.begin();triple != event->triples.end();triple++){
+		//if(matches(subscription, event)){
+		std::cout << triple->subject << " ";
+		std::cout << triple->predicate << " ";
+		std::cout << triple->object;
+		if(triple < event->triples.end()-1) std::cout << ".\n";
+		else std::cout << ".";
+		//}
+	}
+	std::cout << "}\n";
+	for(unsigned int i = 0; i < event->numOfDuplicateEvents; i++){
 		std::cout <<"{";
-		for(std::vector<Triple>::iterator it = event->triples.begin();it != event->triples.end();it++){
-			std::cout << it->subject << " ";
-			std::cout << it->predicate << " ";
-			std::cout << it->object;
-			if(it < event->triples.end()-1) std::cout << ".\n";
+		for(std::vector<Triple>::iterator triple = event->triples.begin();triple != event->triples.end();triple++){
+			std::cout << triple->duplicateTriples[i].subject << " ";
+			std::cout << triple->duplicateTriples[i].predicate << " ";
+			std::cout << triple->duplicateTriples[i].object;
+			if(triple < event->triples.end()-1) std::cout << ".\n";
 			else std::cout << ".";
 		}
 		std::cout << "}\n";
 	}
+
 }
 
 void TestRDFListener::printMessage(std::string msg){
 	std::cout << "TestRDFListener" << id << " > " << msg << std::endl;
 }
-

@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
 *	   5)TRex fa processing e manda risultati ai vari listener<---RDF Constructor che ricevendoli è incaricato di produrre il CE RDF come output
 */	
 	const char* e1 = "./TestEvents/t1.ttl";
+	const char* e11 = "./TestEvents/t2.ttl";
 	const char* e2 = "./TestEvents/t3.ttl";
 	const char* e3 = "./TestEvents/t4.ttl";
 	const char* e4 = "./TestEvents/t6.ttl";
@@ -84,6 +85,8 @@ int main(int argc, char* argv[])
 	
 	std::cout << "--------------------Evento " << a << "-----------------------------" << "\n";
 	processPubPkt(conv.convertToTesla(store->processRdfEvent(e1)), e);
+	std::cout << "--------------------Evento " << a << "-----------------------------" << "\n";
+	processPubPkt(conv.convertToTesla(store->processRdfEvent(e11)), e);
 	std::cout << "--------------------Evento " << a << "-----------------------------" << "\n";
 	processPubPkt(conv.convertToTesla(store->processRdfEvent(e2)), e);
 	std::cout << "--------------------Evento " << a << "-----------------------------" << "\n";
@@ -94,6 +97,7 @@ int main(int argc, char* argv[])
 	processPubPkt(conv.convertToTesla(store->processRdfEvent(e5)), e);
 	std::cout << "--------------------Evento " << a << "-----------------------------" << "\n";
 	processPubPkt(conv.convertToTesla(store->processRdfEvent(e6)), e);
+	std::cout << "-------------------------------------------------------------------" << "\n";
 
 	return 0;
 }
