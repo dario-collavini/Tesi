@@ -28,7 +28,7 @@ std::string getValue(Attribute att){
 	return result;
 }
 
-RDFEvent* TRexListener::createRDF(PubPkt* pkt, Template* templateCE){
+RDFEvent* createRDF(PubPkt* pkt, Template* templateCE){
 	RDFEvent* event = new RDFEvent;
 	Attribute att;
 	char* varName;
@@ -65,6 +65,12 @@ RDFEvent* TRexListener::createRDF(PubPkt* pkt, Template* templateCE){
 	return event;
 }
 
+std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*>> typeOfGroupEvents){
+	std::vector<RDFEvent*> results;
+
+	return results;
+}
+
 void TRexListener::notifyRDFListeners(RDFEvent* event){
 	for(std::set<RDFResultListener*>::iterator it=constructor->getRDFListeners().begin(); it!=constructor->getRDFListeners().end(); it++) {
 		RDFResultListener *listener = *it;
@@ -82,14 +88,15 @@ void TRexListener::handleResult(std::set<PubPkt *> &genPkts, double procTime){
 		Template* templateCE = templates.find(type)->second;
 		if(templateCE->isRuleAllWithin == true){
 			atLeastOneAll = true;//per chiamare la funzione alla fine
-			if(typeOfGroupEvents.find(type) == typeOfGroupEvents.end()){
+			std::map<int, std::vector<PubPkt*>>::iterator it = typeOfGroupEvents.find(type);
+			if(it == typeOfGroupEvents.end()){
 				//nuovo tipo, aggiungi un vettore di eventi
 				std::vector<PubPkt*> eventsToGroup;
 				eventsToGroup.push_back(pubPkt);
 				typeOfGroupEvents.insert(std::pair<int, std::vector<PubPkt*>>(type, eventsToGroup));
 			}else{
 				//esiste già il tipo, aggiungilo al vettore esistente
-				typeOfGroupEvents.find(type)->second.push_back(pubPkt);
+				it->second.push_back(pubPkt);
 			}
 		}else{//la regola non è ALL
 			//pacchetto "singolo" (non ALL), genero RDF
@@ -104,6 +111,16 @@ void TRexListener::handleResult(std::set<PubPkt *> &genPkts, double procTime){
 			delete rdfEvent;
 		}
 	}
-	//TODO:prendi mappa di vettori e passala a funzione incaricata di produrre l'rdf ALL
-		//if(atLeastOneAll)createRDFAll(std::map<int, std::vector<PubPkt*>> typeOfGroupEvents);
+	if(atLeastOneAll == true){
+	   std::vector<RDFEvent*> rdfEventsAll = createRDFAll(typeOfGroupEvents);
+	   for(std::vector<RDFEvent*>::iterator event = rdfEventsAll.begin(); event != rdfEventsAll.end(); event++){
+		   this->notifyRDFListeners(*event);
+		   for(std::vector<Triple>::iterator triple = (*event)->triples.begin(); triple != (*event)->triples.end(); triple++){
+			   delete triple->subject;
+		   	   delete triple->predicate;
+		   	   delete triple->object;
+		   }
+		   delete *event;
+	   }
+	}
 }
