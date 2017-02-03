@@ -33,10 +33,10 @@ RDFEvent* createRDF(PubPkt* pkt, Template* templateCE){
 	Attribute att;
 	char* varName;
 	std::map<std::string, Attribute> attributesMap;
-
 	event->eventType = pkt->getEventType();
 	event->numOfDuplicateEvents = 0;
-	//TODO:attaccare prefissi sparql al pattern
+	event->prefixesArray = RDFStore::getInstance()->getPrefixesArray();
+	event->prefixesArrayLength = RDFStore::getInstance()->getPrefixesArrayLength();
 	for(std::vector<TripleTemplate>::iterator it =templateCE->triples.begin(); it != templateCE->triples.end(); it++){
 		Triple t;
 		t.subject = new char[LEN];
@@ -78,6 +78,8 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*>> typesOfG
 		RDFEvent* event = new RDFEvent;
 		event->eventType = it->first;
 		event->numOfDuplicateEvents = numOfPkt-1;//-1 tolto il primo pacchetto!
+		event->prefixesArray = RDFStore::getInstance()->getPrefixesArray();
+		event->prefixesArrayLength = RDFStore::getInstance()->getPrefixesArrayLength();
 		for(unsigned int j = 0; j < numOfPkt; j++){
 			PubPkt* pubPkt = pubPktVector[j];
 			std::map<std::string, Attribute> attributesMap;
@@ -87,7 +89,7 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*>> typesOfG
 				int index;
 				ValType attType;
 				Attribute att;
-				if(j == 0){//primo set di triple che metto, non ci sono duplicati sicuramente
+				if(j == 0){//primo set di triple (dal primo pacchetto) che metto, non ci sono duplicati sicuramente
 					Triple t;
 					t.subject = new char[LEN];
 					t.predicate = new char[LEN];
@@ -95,7 +97,6 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*>> typesOfG
 					strcpy(t.subject, temp.subject.second);
 					strcpy(t.predicate,temp.predicate.second);
 					strcpy(t.object, temp.object.second);
-					//TODO aggiungere tripla solo se isPartOfAllWithin è true
 					if(temp.subject.first == IS_VAR){
 						pubPkt->getAttributeIndexAndType(t.subject+1, index, attType);//+1 tolgo il '?' della variabile
 						att = pubPkt->getAttribute(index);
@@ -115,12 +116,11 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*>> typesOfG
 						strcpy(t.object, getValue(att).c_str());
 					}
 					event->triples.push_back(t);
-				}else{//sto girando il secondo, o più, pacchetto, di sicuro è un duplicato
+				}else if(temp.isPartOfAllWithin == true){//sto girando il secondo, o più, pacchetto, di sicuro è un duplicato. Duplico la tripla solo se c'è almeno 1 variabile che fa parte dell'ALL
 					DuplicateTriple dt;
 					dt.subject = new char[LEN];
 					dt.predicate = new char[LEN];
 					dt.object = new char[LEN];
-					//TODO aggiungere tripla solo se isPartOfAllWithin è true
 					strcpy(dt.subject, temp.subject.second);
 					strcpy(dt.predicate,temp.predicate.second);
 					strcpy(dt.object, temp.object.second);

@@ -6,6 +6,7 @@
 #include <TRex2/Engine/ResultListener.h>
 #include "RDFResultListener.h"
 #include "RDFConstructor.h"
+#include "../RDFStore/RDFStore.h"
 #include "../Common/RDFStructures.h"
 #include <sstream>
 #include <set>

@@ -23,13 +23,7 @@ public:
 
 	const char* parseQueryString(int type);
 
-	const char** parsePrefixesArray();
-
 	Template* parseTemplateCE();
-
-private:
-	const char * prefixesArray[4] = {"ad:", "http://my.org#", "a1:", "http://localhost#"};
-
 };
 
 

@@ -49,7 +49,7 @@ void defineAttFromType(Attribute* att, Resource* res, Event* event){
 	switch(res->datatypeID){
 		case 1://IRI
 			att->type = STRING;
-			shrinkIRI(res->lexicalForm, event->prefixesArray, event->prefixesLength);//cambio IRI col suo prefisso
+			shrinkIRI(res->lexicalForm, RDFStore::getInstance()->getPrefixesArray(), RDFStore::getInstance()->getPrefixesArrayLength());//cambio IRI col suo prefisso
 			strcpy(att->stringVal, res->lexicalForm);
 			break;
 		case 5://INT

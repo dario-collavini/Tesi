@@ -15,8 +15,6 @@ typedef struct SparqlQuery {
 	int eventType;
 	const char* queryName;
 	const char* queryString;
-	const char** prefixesArray;
-	int prefixesLength;
 	std::vector<std::string> vars;
 } RuleQuery;
 
@@ -28,8 +26,6 @@ typedef struct SparqlResource {
 typedef struct SparqlAnswer {
 	int eventType;				 //tipo evento(== tipo query, da cui ricavo anche il nome)
 	std::map<const char*, Resource*> attributes;	 //prendo vettore vars delle query e mappo variabili con attributi
-	const char** prefixesArray;		//supporto per la traduzione in eventi Tesla (stringVal degli attributi TRex ha LEN 16 fissata)
-	int prefixesLength;
 } Event;
 
 typedef struct RDFTripleTemplate {
@@ -41,9 +37,8 @@ typedef struct RDFTripleTemplate {
 
 typedef struct RDFTemplate {
 	int eventType;
-	bool isRuleAllWithin;
 	std::vector<TripleTemplate> triples;
-
+	bool isRuleAllWithin;
 } Template;
 
 typedef struct RDFDuplicateTriple {
@@ -61,6 +56,8 @@ typedef struct RDFTriple {
 
 typedef struct ComplexEvent {
 	int eventType;
+	const char** prefixesArray; //passato da rdfstore
+	int prefixesArrayLength;//passato da rdfstore
 	std::vector<Triple> triples;
 	unsigned int numOfDuplicateEvents;//serve solo per regole ALL
 	std::vector<std::map<std::string, Attribute>> attributes; //per valutare tutti i constraint

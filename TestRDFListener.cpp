@@ -139,6 +139,9 @@ bool matches(SubPkt* sub, RDFEvent* event){
 //la memoria relativa all'evento viene liberata, se voglio processare ulteriormente devo salvarmi una copia dell'evento
 void TestRDFListener::handleResult(RDFEvent* event){
 	printMessage("New complex event created:");
+	for(int n = 0; n < event->prefixesArrayLength; n = n+2){
+		std::cout << "@prefix " << event->prefixesArray[n] << " <" << event->prefixesArray[n+1] << "> ." << std::endl;
+	}
 	std::cout <<"{";
 	for(std::vector<Triple>::iterator triple = event->triples.begin();triple != event->triples.end();triple++){
 		//if(matches(subscription, event)){
@@ -153,11 +156,15 @@ void TestRDFListener::handleResult(RDFEvent* event){
 	for(unsigned int i = 0; i < event->numOfDuplicateEvents; i++){
 		std::cout <<"{";
 		for(std::vector<Triple>::iterator triple = event->triples.begin();triple != event->triples.end();triple++){
-			std::cout << triple->duplicateTriples[i].subject << " ";
-			std::cout << triple->duplicateTriples[i].predicate << " ";
-			std::cout << triple->duplicateTriples[i].object;
-			if(triple < event->triples.end()-1) std::cout << ".\n";
-			else std::cout << ".";
+			if(!triple->duplicateTriples.empty()){
+				std::cout << triple->duplicateTriples[i].subject << " ";
+				std::cout << triple->duplicateTriples[i].predicate << " ";
+				std::cout << triple->duplicateTriples[i].object;
+				if(triple < event->triples.end()-1)
+					std::cout << ".\n";
+				else
+					std::cout << ".";
+			}
 		}
 		std::cout << "}\n";
 	}

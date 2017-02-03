@@ -82,10 +82,6 @@ const char* ParserEmulator::parseQueryString(int type){
 	}
 }
 
-const char** ParserEmulator::parsePrefixesArray(){
-	return prefixesArray;	
-}
-
 Template* ParserEmulator::parseTemplateCE(){
 	Template* templateCE = new Template;
 	templateCE->eventType = 3;
@@ -98,7 +94,7 @@ Template* ParserEmulator::parseTemplateCE(){
 	t2.subject = std::make_pair(IS_NOT_VAR, "a1:radiazioni");
 	t2.predicate = std::make_pair(IS_NOT_VAR, "a1:is");
 	t2.object = std::make_pair(IS_VAR, "?value");
-	t1.isPartOfAllWithin = true;
+	t2.isPartOfAllWithin = true;
 	templateCE->triples.push_back(t1);
 	templateCE->triples.push_back(t2);
 	

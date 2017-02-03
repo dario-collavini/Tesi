@@ -3,6 +3,13 @@
 //lunghezza buffer dove sono salvati risultati query
 const int LENGTH = 100;
 
+RDFStore* RDFStore::instance = 0;
+RDFStore* RDFStore::getInstance(){
+	if(instance == 0)
+		instance = new RDFStore;
+	return instance;
+}
+
 RDFStore::RDFStore(){
 	this->store = new RDFoxDataStore;
 	this->numVars = new size_t;
@@ -12,15 +19,12 @@ RDFStore::RDFStore(){
 	this->resBuffer = new char[LENGTH];
 	this->bufferLength = new size_t;
 	this->queryIterator = new RDFoxDataStoreTupleIterator;
-	RDFoxDataStore_Create(this->store, this->type, this->parametersArray , 0);
-	RDFoxDataStore_Initialize(*(this->store));
-	std::cout << "1. Inizializzato un Data Store di tipo " << this->type << "\n";
-	RDFoxDataStore_ImportFile(*(this->store), this->kb , 0, false);
-	std::cout << "2. Import file kbradio (triple importate ma non materializzate)\n";
-	RDFoxDataStore_ImportFile(*(this->store), this->dlogRule , 0, false);
-	std::cout << "3. Import file regole datalog\n";
-	RDFoxDataStore_ApplyRules(*(this->store), false);
-	std::cout << "4. Materializzazione triple...\n";
+	this->type = NULL;
+	this->kb = NULL;
+	this->dlogRules = NULL;
+	this->prefixesArray = NULL;
+	this->prefixesArrayLength = 0;
+	this->eventOld = NULL;
 }
 
 RDFStore::~RDFStore(){
@@ -32,9 +36,30 @@ RDFStore::~RDFStore(){
 	delete[] this->resBuffer;
 	delete this->bufferLength;	
 	delete this->queryIterator;
+	delete this->type;
+	delete this->kb;
+	delete this->dlogRules;
+	delete[] this->prefixesArray;
 	for (std::map<int,RuleQuery*>::iterator query = this->queries.begin(); query != this->queries.end(); query++){	
 		delete query->second;
 	}
+}
+
+void RDFStore::initialize(const char* type, const char* kb, const char* dlog, const char** prefixes, int prefixesLength){
+	this->type = type;
+	this->kb = kb;
+	this->dlogRules = dlog;
+	this->prefixesArray = prefixes;
+	this->prefixesArrayLength = prefixesLength;
+	RDFoxDataStore_Create(this->store, this->type, NULL , 0);
+	RDFoxDataStore_Initialize(*(this->store));
+	std::cout << "1. Inizializzato un Data Store di tipo " << this->type << "\n";
+	RDFoxDataStore_ImportFile(*(this->store), this->kb , 0, false);
+	std::cout << "2. Import file kbradio (triple importate ma non materializzate)\n";
+	RDFoxDataStore_ImportFile(*(this->store), this->dlogRules , 0, false);
+	std::cout << "3. Import file regole datalog\n";
+	RDFoxDataStore_ApplyRules(*(this->store), false);
+	std::cout << "4. Materializzazione triple...\n";
 }
 
 std::vector<std::string> getVars(std::string query, int all){
@@ -87,14 +112,12 @@ std::vector<std::string> findVars(const char* query){
 	}
 }
 
-void RDFStore::addQuery(int type, const char* name, const char* string, const char** prefixesArray, int prefixesLength){
+void RDFStore::addQuery(int type, const char* name, const char* string){
 	RuleQuery *temp = new RuleQuery;
 	temp->eventType = type;
 	temp->queryName = name;
 	temp->queryString = string;
 	temp->vars = findVars(string);
-	temp->prefixesArray = prefixesArray;
-	temp->prefixesLength = prefixesLength;
 	queries.insert(std::pair<int, RuleQuery*>(type, temp));
 }
 
@@ -132,14 +155,12 @@ std::vector<Event*> RDFStore::evaluateSingleQuery(RuleQuery* q){
 	std::vector<Event*> events;
 	Resource *tempRes;
 	Event *tempEvent;								
-	RDFoxDataStoreTupleIterator_CompileQuery(queryIterator,*(this->store), q->queryString, NULL, 0, q->prefixesArray, q->prefixesLength);
+	RDFoxDataStoreTupleIterator_CompileQuery(queryIterator,*(this->store), q->queryString, NULL, 0, this->prefixesArray, this->prefixesArrayLength);
 	RDFoxDataStoreTupleIterator_GetArity(this->numVars, *(this->queryIterator));
 	RDFoxDataStoreTupleIterator_Open(this->isQueryMatched, *(this->queryIterator), *(this->numVars), this->resourceIDs);
 	while(*(this->isQueryMatched) != 0){
 		tempEvent = new Event;
 		tempEvent->eventType = q->eventType;
-		tempEvent->prefixesArray = q->prefixesArray;
-		tempEvent->prefixesLength = q->prefixesLength;
 		for(unsigned int j = 0; j < *(this->numVars); j++){
 			tempRes = new Resource;
 			tempRes->lexicalForm = new char[LENGTH];

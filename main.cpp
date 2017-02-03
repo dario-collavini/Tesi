@@ -10,7 +10,6 @@
 #include <vector>
 
 int a = 1;
-
 void processPubPkt(vector<PubPkt*> pubPkts, TRexEngine* e){
 	if(pubPkts.size() == 0) std::cout << "\n\n\n";
 	for (vector<PubPkt*>::iterator it= pubPkts.begin(); it != pubPkts.end(); it++){
@@ -32,7 +31,14 @@ int main(int argc, char* argv[])
 *
 *	EventConverter: 6)implementa traduzione eventoRDF ----> eventoTesla (lowering rule) 
 */
-	RDFStore* store = new RDFStore;
+	const char* type = "seq";
+	const char* kb = "/home/dario/Scrivania/RDFoxProva/CppRDFox/file/kbradio.ttl";
+	const char* dlogRules = "/home/dario/Scrivania/RDFoxProva/CppRDFox/file/inf.dlog";
+	int prefixesArrayLength = 4;
+	const char* prefixesArray[prefixesArrayLength] = {"ad:", "http://my.org#", "a1:", "http://localhost#"};
+
+	RDFStore* store = RDFStore::getInstance();
+	store->initialize(type, kb, dlogRules, prefixesArray, prefixesArrayLength);
 	TRexEngine* e = new TRexEngine(1);
 	RDFConstructor* constructor= new RDFConstructor();
 	EventConverter conv;
@@ -51,9 +57,9 @@ int main(int argc, char* argv[])
 	ParserEmulator parser;
 	e->processRulePkt(parser.parseRule());
 
-	//2)Query estratte da una regola RDFTesla //TODO arrayprefissi lunghezza
-	store->addQuery(parser.parseQueryType(1),parser.parseQueryName(1),parser.parseQueryString(1), parser.parsePrefixesArray(), 4);
-	store->addQuery(parser.parseQueryType(2),parser.parseQueryName(2),parser.parseQueryString(2), parser.parsePrefixesArray(), 4);
+	//2)Query estratte da una regola RDFTesla
+	store->addQuery(parser.parseQueryType(1),parser.parseQueryName(1),parser.parseQueryString(1));
+	store->addQuery(parser.parseQueryType(2),parser.parseQueryName(2),parser.parseQueryString(2));
 
 	//3)Template evento complesso
 	constructor->addTemplate(3, parser.parseTemplateCE());
