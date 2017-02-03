@@ -74,24 +74,46 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*>> typesOfG
 		std::vector<PubPkt*> pubPktVector = it->second;
 		Template* templateCE = templates.find(it->first)->second;
 		unsigned int numOfTriples = templateCE->triples.size();
+		unsigned int numOfPkt =  pubPktVector.size();
 		RDFEvent* event = new RDFEvent;
 		event->eventType = it->first;
-		unsigned int numOfPkt =  pubPktVector.size();
 		event->numOfDuplicateEvents = numOfPkt-1;//-1 tolto il primo pacchetto!
 		for(unsigned int j = 0; j < numOfPkt; j++){
 			PubPkt* pubPkt = pubPktVector[j];
-			std::map<std::string, Attribute> attributes;
+			std::map<std::string, Attribute> attributesMap;
 			//copio le singole triple da template all'evento rdf
 			for(unsigned int n = 0; n < numOfTriples; n++){
+				TripleTemplate temp = templateCE->triples[n];
+				int index;
+				ValType attType;
+				Attribute att;
 				if(j == 0){//primo set di triple che metto, non ci sono duplicati sicuramente
 					Triple t;
 					t.subject = new char[LEN];
 					t.predicate = new char[LEN];
 					t.object = new char[LEN];
+					strcpy(t.subject, temp.subject.second);
+					strcpy(t.predicate,temp.predicate.second);
+					strcpy(t.object, temp.object.second);
 					//TODO aggiungere tripla solo se isPartOfAllWithin è true
-					strcpy(t.subject, templateCE->triples[n].subject.second);
-					strcpy(t.predicate,templateCE->triples[n].predicate.second);
-					strcpy(t.object, templateCE->triples[n].object.second);
+					if(temp.subject.first == IS_VAR){
+						pubPkt->getAttributeIndexAndType(t.subject+1, index, attType);//+1 tolgo il '?' della variabile
+						att = pubPkt->getAttribute(index);
+						attributesMap.insert(std::make_pair(att.name, att)); //salvo attributi per valutare constraint subscription,
+						strcpy(t.subject, getValue(att).c_str());
+					}
+					if(temp.predicate.first == IS_VAR){
+						pubPkt->getAttributeIndexAndType(t.predicate+1, index, attType);
+						att = pubPkt->getAttribute(index);
+						attributesMap.insert(std::make_pair(att.name, att));
+						strcpy(t.predicate, getValue(att).c_str());
+					}
+					if(temp.object.first == IS_VAR){
+						pubPkt->getAttributeIndexAndType(t.object+1, index, attType);
+						att = pubPkt->getAttribute(index);
+						attributesMap.insert(std::make_pair(att.name, att));
+						strcpy(t.object, getValue(att).c_str());
+					}
 					event->triples.push_back(t);
 				}else{//sto girando il secondo, o più, pacchetto, di sicuro è un duplicato
 					DuplicateTriple dt;
@@ -99,36 +121,31 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*>> typesOfG
 					dt.predicate = new char[LEN];
 					dt.object = new char[LEN];
 					//TODO aggiungere tripla solo se isPartOfAllWithin è true
-					strcpy(dt.subject, templateCE->triples[n].subject.second);
-					strcpy(dt.predicate,templateCE->triples[n].predicate.second);
-					strcpy(dt.object, templateCE->triples[n].object.second);
+					strcpy(dt.subject, temp.subject.second);
+					strcpy(dt.predicate,temp.predicate.second);
+					strcpy(dt.object, temp.object.second);
+					if(temp.subject.first == IS_VAR){
+						pubPkt->getAttributeIndexAndType(dt.subject+1, index, attType);
+						att = pubPkt->getAttribute(index);
+						attributesMap.insert(std::make_pair(att.name, att));
+						strcpy(dt.subject, getValue(att).c_str());
+					}
+					if(temp.predicate.first == IS_VAR){
+						pubPkt->getAttributeIndexAndType(dt.predicate+1, index, attType);
+						att = pubPkt->getAttribute(index);
+						attributesMap.insert(std::make_pair(att.name, att));
+						strcpy(dt.predicate, getValue(att).c_str());
+					}
+					if(temp.object.first == 1){
+						pubPkt->getAttributeIndexAndType(dt.object+1, index, attType);
+						att = pubPkt->getAttribute(index);
+						attributesMap.insert(std::make_pair(att.name, att));
+						strcpy(dt.object, getValue(att).c_str());
+					}
 					event->triples[n].duplicateTriples.push_back(dt);
 				}
 			}
-			//sostituisco le variabili presenti nelle triple
-			for(int i = 0; i < pubPkt->getAttributesNum(); i++){
-				Attribute att;
-				char* varName;
-				att = pubPkt->getAttribute(i);
-				varName = att.name;
-				attributes.insert(std::make_pair(varName, att)); //salvo attributi per valutare constraint subscription
-				for(unsigned int k = 0; k < numOfTriples; k++){
-					TripleTemplate temp = templateCE->triples[k];
-					if(temp.subject.first == 1 && strcmp((temp.subject.second+1), varName) == 0 ){//+1 tolgo il '?' della variabile
-						if(j == 0) strcpy(event->triples[k].subject, getValue(att).c_str());
-						else strcpy(event->triples[k].duplicateTriples[j-1].subject, getValue(att).c_str());
-					}
-					if(temp.predicate.first == 1 && strcmp((temp.predicate.second+1), varName) == 0 ){
-						if(j == 0) strcpy(event->triples[k].predicate, getValue(att).c_str());
-						else strcpy(event->triples[k].duplicateTriples[j-1].predicate, getValue(att).c_str());
-					}
-					if(temp.object.first == 1 && strcmp((temp.object.second+1), varName) == 0 ){
-						if(j == 0) strcpy(event->triples[k].object, getValue(att).c_str());
-						else strcpy(event->triples[k].duplicateTriples[j-1].object, getValue(att).c_str());
-					}
-				}
-			}
-			event->attributes.push_back(attributes);
+			event->attributes.push_back(attributesMap);
 		}
 		results.push_back(event);
 	}

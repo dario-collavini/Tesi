@@ -89,15 +89,15 @@ const char** ParserEmulator::parsePrefixesArray(){
 Template* ParserEmulator::parseTemplateCE(){
 	Template* templateCE = new Template;
 	templateCE->eventType = 3;
-	templateCE->isRuleAllWithin = false;
+	templateCE->isRuleAllWithin = true;
 	TripleTemplate t1, t2;
-	t1.subject = std::make_pair(NO_VAR, "a1:stanza");
-	t1.predicate = std::make_pair(NO_VAR, "a1:is");
-	t1.object = std::make_pair(YES_VAR, "?room");
+	t1.subject = std::make_pair(IS_NOT_VAR, "a1:stanza");
+	t1.predicate = std::make_pair(IS_NOT_VAR, "a1:is");
+	t1.object = std::make_pair(IS_VAR, "?room");
 	t1.isPartOfAllWithin = true;
-	t2.subject = std::make_pair(NO_VAR, "a1:radiazioni");
-	t2.predicate = std::make_pair(NO_VAR, "a1:is");
-	t2.object = std::make_pair(YES_VAR, "?value");
+	t2.subject = std::make_pair(IS_NOT_VAR, "a1:radiazioni");
+	t2.predicate = std::make_pair(IS_NOT_VAR, "a1:is");
+	t2.object = std::make_pair(IS_VAR, "?value");
 	t1.isPartOfAllWithin = true;
 	templateCE->triples.push_back(t1);
 	templateCE->triples.push_back(t2);

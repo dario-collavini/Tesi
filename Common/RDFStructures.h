@@ -7,8 +7,8 @@
 #include <string>
 
 enum IsVar{
-	NO_VAR = 0,
-	YES_VAR = 1
+	IS_NOT_VAR = 0,
+	IS_VAR = 1
 };
 
 typedef struct SparqlQuery {
