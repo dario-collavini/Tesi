@@ -34,7 +34,6 @@ RDFEvent* createRDF(PubPkt* pkt, Template* templateCE){
 	char* varName;
 	std::map<std::string, Attribute> attributesMap;
 	event->eventType = pkt->getEventType();
-	event->numOfDuplicateEvents = 0;
 	event->prefixesArray = RDFStore::getInstance()->getPrefixesArray();
 	event->prefixesArrayLength = RDFStore::getInstance()->getPrefixesArrayLength();
 	for(std::vector<TripleTemplate>::iterator it =templateCE->triples.begin(); it != templateCE->triples.end(); it++){
@@ -53,13 +52,13 @@ RDFEvent* createRDF(PubPkt* pkt, Template* templateCE){
 		attributesMap.insert(std::make_pair(varName, att)); //salvo attributi per valutare constraint subscription
 		for(unsigned int i = 0; i < templateCE->triples.size(); i++){
 			TripleTemplate temp = templateCE->triples[i];
-			if(temp.subject.first == 1 && strcmp((temp.subject.second+1), varName) == 0 ){//+1 tolgo il '?' della variabile
+			if(temp.subject.first == IS_VAR && strcmp((temp.subject.second+1), varName) == 0 ){//+1 tolgo il '?' della variabile
 				strcpy(event->triples[i].subject, getValue(att).c_str());
 			}
-			if(temp.predicate.first == 1 && strcmp((temp.predicate.second+1), varName) == 0 ){
+			if(temp.predicate.first == IS_VAR && strcmp((temp.predicate.second+1), varName) == 0 ){
 				strcpy(event->triples[i].predicate, getValue(att).c_str());
 			}
-			if(temp.object.first == 1 && strcmp((temp.object.second+1), varName) == 0 ){
+			if(temp.object.first == IS_VAR && strcmp((temp.object.second+1), varName) == 0 ){
 				strcpy(event->triples[i].object, getValue(att).c_str());
 			}
 		}
@@ -68,21 +67,21 @@ RDFEvent* createRDF(PubPkt* pkt, Template* templateCE){
 	return event;
 }
 
-std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*>> typesOfGroupEvents, std::map<int, Template*> templates){
+std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOfGroupEvents, std::map<int, Template*> templates){
 	std::vector<RDFEvent*> results;
-	for(std::map<int, std::vector<PubPkt*>>::iterator it = typesOfGroupEvents.begin(); it != typesOfGroupEvents.end(); it++){
+	for(std::map<int, std::vector<PubPkt*> >::iterator it = typesOfGroupEvents.begin(); it != typesOfGroupEvents.end(); it++){
 		std::vector<PubPkt*> pubPktVector = it->second;
 		Template* templateCE = templates.find(it->first)->second;
 		unsigned int numOfTriples = templateCE->triples.size();
 		unsigned int numOfPkt =  pubPktVector.size();
 		RDFEvent* event = new RDFEvent;
 		event->eventType = it->first;
-		event->numOfDuplicateEvents = numOfPkt-1;//-1 tolto il primo pacchetto!
 		event->prefixesArray = RDFStore::getInstance()->getPrefixesArray();
 		event->prefixesArrayLength = RDFStore::getInstance()->getPrefixesArrayLength();
 		for(unsigned int j = 0; j < numOfPkt; j++){
 			PubPkt* pubPkt = pubPktVector[j];
 			std::map<std::string, Attribute> attributesMap;
+			std::vector<Triple> dupTriples;
 			//copio le singole triple da template all'evento rdf
 			for(unsigned int n = 0; n < numOfTriples; n++){
 				TripleTemplate temp = templateCE->triples[n];
@@ -116,8 +115,8 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*>> typesOfG
 						strcpy(t.object, getValue(att).c_str());
 					}
 					event->triples.push_back(t);
-				}else if(temp.isPartOfAllWithin == true){//sto girando il secondo, o più, pacchetto, di sicuro è un duplicato. Duplico la tripla solo se c'è almeno 1 variabile che fa parte dell'ALL
-					DuplicateTriple dt;
+				}else{
+					Triple dt;
 					dt.subject = new char[LEN];
 					dt.predicate = new char[LEN];
 					dt.object = new char[LEN];
@@ -136,16 +135,17 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*>> typesOfG
 						attributesMap.insert(std::make_pair(att.name, att));
 						strcpy(dt.predicate, getValue(att).c_str());
 					}
-					if(temp.object.first == 1){
+					if(temp.object.first == IS_VAR){
 						pubPkt->getAttributeIndexAndType(dt.object+1, index, attType);
 						att = pubPkt->getAttribute(index);
 						attributesMap.insert(std::make_pair(att.name, att));
 						strcpy(dt.object, getValue(att).c_str());
 					}
-					event->triples[n].duplicateTriples.push_back(dt);
+					dupTriples.push_back(dt);
 				}
 			}
-			event->attributes.push_back(attributesMap);
+			if(j != 0) event->duplicateTriples.push_back(dupTriples);//non è il primo pacchetto, push del duplicato
+			event->attributes.push_back(attributesMap);//vector[0] primo pacchetto, >0 gli eventuali duplicati
 		}
 		results.push_back(event);
 	}
@@ -161,7 +161,7 @@ void TRexListener::notifyRDFListeners(RDFEvent* event){
 
 void TRexListener::handleResult(std::set<PubPkt *> &genPkts, double procTime){
 	bool atLeastOneAll = false;
-	std::map<int, std::vector<PubPkt*>> typesOfGroupEvents;
+	std::map<int, std::vector<PubPkt*> > typesOfGroupEvents;
 	std::map<int, Template*> templates = this->constructor->getRdfEventTemplates();
 	for (std::set<PubPkt*>::iterator i= genPkts.begin(); i != genPkts.end(); i++){
 		PubPkt* pubPkt= *i;
@@ -169,12 +169,12 @@ void TRexListener::handleResult(std::set<PubPkt *> &genPkts, double procTime){
 		Template* templateCE = templates.find(type)->second;
 		if(templateCE->isRuleAllWithin == true){
 			atLeastOneAll = true;//per chiamare la funzione alla fine
-			std::map<int, std::vector<PubPkt*>>::iterator it = typesOfGroupEvents.find(type);
+			std::map<int, std::vector<PubPkt*> >::iterator it = typesOfGroupEvents.find(type);
 			if(it == typesOfGroupEvents.end()){
 				//nuovo tipo, aggiungi un vettore di eventi
 				std::vector<PubPkt*> eventsToGroup;
 				eventsToGroup.push_back(pubPkt);
-				typesOfGroupEvents.insert(std::pair<int, std::vector<PubPkt*>>(type, eventsToGroup));
+				typesOfGroupEvents.insert(std::pair<int, std::vector<PubPkt*> >(type, eventsToGroup));
 			}else{
 				//esiste già il tipo, aggiungilo al vettore esistente
 				it->second.push_back(pubPkt);
@@ -200,11 +200,13 @@ void TRexListener::handleResult(std::set<PubPkt *> &genPkts, double procTime){
 			   delete triple->subject;
 		   	   delete triple->predicate;
 		   	   delete triple->object;
-		   	   for(std::vector<DuplicateTriple>::iterator dupTriple = (*triple).duplicateTriples.begin(); dupTriple != (*triple).duplicateTriples.end(); dupTriple++){
-		   		   delete dupTriple->subject;
-		   		   delete dupTriple->predicate;
-		   		   delete dupTriple->object;
-		   	   }
+		   }
+		   for(std::vector<std::vector<Triple> >::iterator dupTripleVector = (*event)->duplicateTriples.begin(); dupTripleVector != (*event)->duplicateTriples.end(); dupTripleVector++){
+			   for(std::vector<Triple>::iterator dupTriple = dupTripleVector->begin(); dupTriple != dupTripleVector->end(); dupTriple++){
+				   delete dupTriple->subject;
+		  		   delete dupTriple->predicate;
+		  		   delete dupTriple->object;
+			   }
 		   }
 		   delete *event;
 	   }

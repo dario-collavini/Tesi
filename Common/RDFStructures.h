@@ -32,7 +32,6 @@ typedef struct RDFTripleTemplate {
 	std::pair<IsVar, const char*> subject;
 	std::pair<IsVar, const char*> predicate;
 	std::pair<IsVar, const char*> object;
-	bool isPartOfAllWithin;
 } TripleTemplate;
 
 typedef struct RDFTemplate {
@@ -41,17 +40,10 @@ typedef struct RDFTemplate {
 	bool isRuleAllWithin;
 } Template;
 
-typedef struct RDFDuplicateTriple {
-	char* subject;
-	char* predicate;
-	char* object;
-} DuplicateTriple;
-
 typedef struct RDFTriple {
 	char* subject;
 	char* predicate;
 	char* object;
-	std::vector<DuplicateTriple> duplicateTriples;
 } Triple;
 
 typedef struct ComplexEvent {
@@ -59,8 +51,8 @@ typedef struct ComplexEvent {
 	const char** prefixesArray; //passato da rdfstore
 	int prefixesArrayLength;//passato da rdfstore
 	std::vector<Triple> triples;
-	unsigned int numOfDuplicateEvents;//serve solo per regole ALL
-	std::vector<std::map<std::string, Attribute>> attributes; //per valutare tutti i constraint
+	std::vector<std::vector<Triple> > duplicateTriples;//per regole ALL
+	std::vector<std::map<std::string, Attribute> > attributes; //per valutare tutti i constraint (vettore di mappe, 0 indice del primo evento, >0 indice degli eventuali duplicati)
 } RDFEvent;
 
 #endif /*RDFSTRUCTURES_H*/

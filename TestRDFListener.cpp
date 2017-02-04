@@ -135,40 +135,57 @@ bool matches(SubPkt* sub, RDFEvent* event){
 	return true;
 }
 
+bool matchesDuplicate(SubPkt* sub, RDFEvent* event, unsigned int n){
+	if(event->eventType!=sub->getEventType()) return false;
+	if(event->attributes[n].empty()) return true;//se la mappa è vuota,sto tirando fuori un pacchetto senza variabili, di default la All lo duplica tot volte (= numero di eventi accaduti)
+	for (int i=0; i<sub->getConstraintsNum(); i++){
+		Constraint constr= sub->getConstraint(i);
+		if(strcmp(event->attributes[n].find(constr.name)->second.name, constr.name) != 0) return false;
+		if(!matches(constr, event->attributes[n].find(constr.name)->second)) return false;
+	}
+	return true;
+}
+
 
 //la memoria relativa all'evento viene liberata, se voglio processare ulteriormente devo salvarmi una copia dell'evento
 void TestRDFListener::handleResult(RDFEvent* event){
-	printMessage("New complex event created:");
-	for(int n = 0; n < event->prefixesArrayLength; n = n+2){
-		std::cout << "@prefix " << event->prefixesArray[n] << " <" << event->prefixesArray[n+1] << "> ." << std::endl;
-	}
-	std::cout <<"{";
-	for(std::vector<Triple>::iterator triple = event->triples.begin();triple != event->triples.end();triple++){
-		//if(matches(subscription, event)){
-		std::cout << triple->subject << " ";
-		std::cout << triple->predicate << " ";
-		std::cout << triple->object;
-		if(triple < event->triples.end()-1) std::cout << ".\n";
-		else std::cout << ".";
-		//}
-	}
-	std::cout << "}\n";
-	for(unsigned int i = 0; i < event->numOfDuplicateEvents; i++){
+	bool isFirstEvent = true;
+	if(matches(subscription, event)){
+		printMessage("New complex event created:");
+		for(int n = 0; n < event->prefixesArrayLength; n = n+2){
+			std::cout << "@prefix " << event->prefixesArray[n] << " <" << event->prefixesArray[n+1] << "> ." << std::endl;
+		}
 		std::cout <<"{";
 		for(std::vector<Triple>::iterator triple = event->triples.begin();triple != event->triples.end();triple++){
-			if(!triple->duplicateTriples.empty()){
-				std::cout << triple->duplicateTriples[i].subject << " ";
-				std::cout << triple->duplicateTriples[i].predicate << " ";
-				std::cout << triple->duplicateTriples[i].object;
-				if(triple < event->triples.end()-1)
+			std::cout << triple->subject << " ";
+			std::cout << triple->predicate << " ";
+			std::cout << triple->object;
+			if(triple < event->triples.end()-1) std::cout << ".\n";
+			else std::cout << ".";
+		}
+		std::cout << "}\n";
+		isFirstEvent = false;
+	}
+	for(unsigned int i = 0; i < event->duplicateTriples.size(); i++){
+		std::vector<Triple> vector = event->duplicateTriples[i];
+		if(matchesDuplicate(subscription, event, i+1)){//+1 perchè event->attributes ha anche i valori del primo evento (attributes[0])
+			if(isFirstEvent){
+				printMessage("New complex event created:");
+			}
+			isFirstEvent = false;
+			std::cout <<"{";
+			for(std::vector<Triple>::iterator dupTriple = vector.begin(); dupTriple != vector.end(); dupTriple++){
+				std::cout << dupTriple->subject << " ";
+				std::cout << dupTriple->predicate << " ";
+				std::cout << dupTriple->object;
+				if(dupTriple < vector.end()-1)
 					std::cout << ".\n";
 				else
 					std::cout << ".";
 			}
+			std::cout << "}\n";
 		}
-		std::cout << "}\n";
 	}
-
 }
 
 void TestRDFListener::printMessage(std::string msg){
