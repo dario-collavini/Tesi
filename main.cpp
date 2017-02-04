@@ -32,8 +32,8 @@ int main(int argc, char* argv[])
 *	EventConverter: 6)implementa traduzione eventoRDF ----> eventoTesla (lowering rule) 
 */
 	const char* type = "seq";
-	const char* kb = "/home/dario/Scrivania/RDFoxProva/CppRDFox/file/kbradio.ttl";
-	const char* dlogRules = "/home/dario/Scrivania/RDFoxProva/CppRDFox/file/inf.dlog";
+	const char* kb = "./Files/kbradio.ttl";
+	const char* dlogRules = "./Files/inf.dlog";
 	int prefixesArrayLength = 4;
 	const char* prefixesArray[prefixesArrayLength] = {"ad:", "http://my.org#", "a1:", "http://localhost#"};
 
