@@ -1,39 +1,13 @@
 #include "EventConverter.h"
 
-/*typedef uint8_t DatatypeID;
-const DatatypeID D_INVALID_DATATYPE_ID = 0;
-const DatatypeID D_IRI_REFERENCE = 1;
-const DatatypeID D_BLANK_NODE = 2;
-const DatatypeID D_XSD_STRING = 3;
-const DatatypeID D_RDF_PLAIN_LITERAL = 4;
-const DatatypeID D_XSD_INTEGER = 5;
-const DatatypeID D_XSD_FLOAT = 6;
-const DatatypeID D_XSD_DOUBLE = 7;
-const DatatypeID D_XSD_BOOLEAN = 8;
-const DatatypeID D_XSD_DATE_TIME = 9;
-const DatatypeID D_XSD_TIME = 10;
-const DatatypeID D_XSD_DATE = 11;
-const DatatypeID D_XSD_G_YEAR_MONTH = 12;
-const DatatypeID D_XSD_G_YEAR = 13;
-const DatatypeID D_XSD_G_MONTH_DAY = 14;
-const DatatypeID D_XSD_G_DAY = 15;
-const DatatypeID D_XSD_G_MONTH = 16;
-const DatatypeID D_XSD_DURATION = 17;*/
-
-/*enum ValType {
-	INT=0,
-	FLOAT=1,
-	BOOL=2,
-	STRING=3
-};*/
-
+//Substitutes the first part of an IRI with its prefix, as defined in the RDF store
 void shrinkIRI(char* lexicalForm, const char** prefixesArray, int prefixesLength){
 	std::string string(lexicalForm);
 	size_t found;
 	for(int i = 0; i < prefixesLength; i = i+2){
 		std::string prefix(*(prefixesArray+i+1));
 		found = string.find(prefix);
-		if(found == 0){//prefisso trovato, lo scambio
+		if(found == 0){//the position of the prefix IRI must be the first character
 			string.replace(string.begin(), string.begin()+ prefix.size(), *(prefixesArray+i));
 			strcpy(lexicalForm, string.c_str());
 			break;
@@ -41,10 +15,8 @@ void shrinkIRI(char* lexicalForm, const char** prefixesArray, int prefixesLength
 	}
 }
 
-/**
-*  See RDFox: Common.h for datatypeID
-*      TRex: Const.h for ValType
-**/
+//See RDFox: Common.h for datatypeID
+//    TRex: Const.h for ValType
 void defineAttFromType(Attribute* att, Resource* res, Event* event){
 	switch(res->datatypeID){
 		case 1://IRI
@@ -79,25 +51,23 @@ void defineAttFromType(Attribute* att, Resource* res, Event* event){
 	}
 }
 
-/**
-*  Converts RdfEvent into TeslaEvent and frees memory about RdfEvent
-**/
+//Converts RdfEvent into TeslaEvent and frees memory about RdfEvent
 std::vector<PubPkt*> EventConverter::convertToTesla(std::vector<Event*> events){
 	std::vector<PubPkt*> pubPkts;
 	for(std::vector<Event*>::iterator event = events.begin() ; event != events.end(); event++){
 		int num = (*event)->attributes.size();
 		Attribute tempAtt[num];
 		int i = 0;
-		for(std::map<const char*, Resource*>::iterator res = (*event)->attributes.begin(); res != (*event)->attributes.end(); res++){
-			strcpy(tempAtt[i].name, res->first);
+		for(std::map<std::string, Resource*>::iterator res = (*event)->attributes.begin(); res != (*event)->attributes.end(); res++){
+			strcpy(tempAtt[i].name, res->first.c_str());
 			defineAttFromType(tempAtt+i, res->second, *event);
 			delete[] res->second->lexicalForm;
-			delete res->second;//una volta copiato come attributo, libero memoria
+			delete res->second;//PubPkt created, frees event memory (no more needed)
 			i++;
-		}   
+		}
 		PubPkt* temp= new PubPkt((*event)->eventType, tempAtt, num);
 		pubPkts.push_back(temp);
-		delete *event;//svuoto il vettore degli eventi, perchè ormai l'evento l'ho convertito in TeslaEvent
+		delete *event;
 	}
 	return pubPkts;	
 }

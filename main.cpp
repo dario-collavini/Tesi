@@ -9,7 +9,9 @@
 #include "RDFConstructor/RDFConstructor.h"
 #include <vector>
 
+//For print purposes
 int a = 1;
+
 void processPubPkt(vector<PubPkt*> pubPkts, TRexEngine* e){
 	if(pubPkts.size() == 0) std::cout << "\n\n\n";
 	for (vector<PubPkt*>::iterator it= pubPkts.begin(); it != pubPkts.end(); it++){
@@ -22,12 +24,12 @@ void processPubPkt(vector<PubPkt*> pubPkts, TRexEngine* e){
 int main(int argc, char* argv[])
 {
 /*Pre-processing: setting di RDFox e TRex da parte di un server dedicato.
-*	RDFox:  	1)creo e inizializzo store con parametri passati;
-*			2)import triple ontologia;
-*			3)import regole datalog ontologia;
-*			4)materializzazione triple (esplicite(=caricate) + implicite(=dedotte da regole)).
+*	RDFox:  		1)creo e inizializzo store con parametri passati;
+*					2)import triple ontologia;
+*					3)import regole datalog ontologia;
+*					4)materializzazione triple (esplicite(=caricate) + implicite(=dedotte da regole)).
 *		
-*	TRex:		5)inizializzo engine.
+*	TRex:			5)inizializzo engine.
 *
 *	EventConverter: 6)implementa traduzione eventoRDF ----> eventoTesla (lowering rule) 
 */

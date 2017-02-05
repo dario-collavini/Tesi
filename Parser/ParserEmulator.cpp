@@ -1,14 +1,12 @@
 #include "ParserEmulator.h"
 
 RulePkt* ParserEmulator::parseRule(){
-
 	/*creo regola di esempio:
 	*  Assign 1 = Movement, 2 = High_Radiation, 3 = Warning
 	*  define Warning(room = string, value = int)
 	*  from Movement(room = $a) and each High_Radiation(value > 100, room = $a) within 5 min from Movement
 	*  where room = Movement.room and value = High_Radiation.value
 	*/
-		
 	char stringRoom[] = "room";
 	char stringValue[] = "value";
 	//char stringSensor[] = "sensor";
@@ -48,23 +46,17 @@ RulePkt* ParserEmulator::parseRule(){
 	warn_tmplate->addAttribute(stringRoom, room);
 	warn_tmplate->addAttribute(stringValue, rad);
 	//warn_tmplate->addAttribute(stringSensor, sensor);
-	
 	rule->setCompositeEventTemplate(warn_tmplate);
-	
 	return rule;
-
 }
 
-
 int ParserEmulator::parseQueryType(int type){
-
 	if(type == 1){
 		return 1;
 	}else{
 		return 2;
 	}
 }
-
 
 const char* ParserEmulator::parseQueryName(int type){	
 	if(type == 1){
@@ -95,6 +87,5 @@ Template* ParserEmulator::parseTemplateCE(){
 	t2.object = std::make_pair(IS_VAR, "?value");
 	templateCE->triples.push_back(t1);
 	templateCE->triples.push_back(t2);
-	
 	return templateCE;
 }

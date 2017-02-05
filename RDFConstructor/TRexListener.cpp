@@ -1,6 +1,7 @@
 #include "TRexListener.h"
 
-const int LEN = 16; //lunghezza char risultati trex
+//Max result length as defined in TRex
+const int LEN = 16;
 
 TRexListener::TRexListener(RDFConstructor* constructor){
 	this->constructor = constructor;
@@ -9,6 +10,7 @@ TRexListener::TRexListener(RDFConstructor* constructor){
 TRexListener::~TRexListener(){
 }
 
+//Converts the result string from RDFox into a compatible TRex value
 std::string getValue(Attribute att){
 	std::string result;
 	switch(att.type){
@@ -49,10 +51,10 @@ RDFEvent* createRDF(PubPkt* pkt, Template* templateCE){
 	for(int i = 0; i < pkt->getAttributesNum(); i++){
 		att = pkt->getAttribute(i);
 		varName = att.name;
-		attributesMap.insert(std::make_pair(varName, att)); //salvo attributi per valutare constraint subscription
+		attributesMap.insert(std::make_pair(varName, att)); //attributes saved for final evaluation of subscriptions
 		for(unsigned int i = 0; i < templateCE->triples.size(); i++){
 			TripleTemplate temp = templateCE->triples[i];
-			if(temp.subject.first == IS_VAR && strcmp((temp.subject.second+1), varName) == 0 ){//+1 tolgo il '?' della variabile
+			if(temp.subject.first == IS_VAR && strcmp((temp.subject.second+1), varName) == 0 ){//+1 removes the '?' or '$' of sparql var
 				strcpy(event->triples[i].subject, getValue(att).c_str());
 			}
 			if(temp.predicate.first == IS_VAR && strcmp((temp.predicate.second+1), varName) == 0 ){
@@ -67,6 +69,7 @@ RDFEvent* createRDF(PubPkt* pkt, Template* templateCE){
 	return event;
 }
 
+//Called just for ALL_WITHIN rules
 std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOfGroupEvents, std::map<int, Template*> templates){
 	std::vector<RDFEvent*> results;
 	for(std::map<int, std::vector<PubPkt*> >::iterator it = typesOfGroupEvents.begin(); it != typesOfGroupEvents.end(); it++){
@@ -82,13 +85,12 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOf
 			PubPkt* pubPkt = pubPktVector[j];
 			std::map<std::string, Attribute> attributesMap;
 			std::vector<Triple> dupTriples;
-			//copio le singole triple da template all'evento rdf
 			for(unsigned int n = 0; n < numOfTriples; n++){
 				TripleTemplate temp = templateCE->triples[n];
 				int index;
 				ValType attType;
 				Attribute att;
-				if(j == 0){//primo set di triple (dal primo pacchetto) che metto, non ci sono duplicati sicuramente
+				if(j == 0){//first PubPkt, no duplicates for sure
 					Triple t;
 					t.subject = new char[LEN];
 					t.predicate = new char[LEN];
@@ -97,9 +99,9 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOf
 					strcpy(t.predicate,temp.predicate.second);
 					strcpy(t.object, temp.object.second);
 					if(temp.subject.first == IS_VAR){
-						pubPkt->getAttributeIndexAndType(t.subject+1, index, attType);//+1 tolgo il '?' della variabile
+						pubPkt->getAttributeIndexAndType(t.subject+1, index, attType);//+1 removes '?' or '$' of sparql var
 						att = pubPkt->getAttribute(index);
-						attributesMap.insert(std::make_pair(att.name, att)); //salvo attributi per valutare constraint subscription,
+						attributesMap.insert(std::make_pair(att.name, att));//attributes saved for final evaluation of subscriptions
 						strcpy(t.subject, getValue(att).c_str());
 					}
 					if(temp.predicate.first == IS_VAR){
@@ -115,7 +117,7 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOf
 						strcpy(t.object, getValue(att).c_str());
 					}
 					event->triples.push_back(t);
-				}else{
+				}else{//it is not the first PubPkt, needs to be handled as a duplicate
 					Triple dt;
 					dt.subject = new char[LEN];
 					dt.predicate = new char[LEN];
@@ -144,8 +146,8 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOf
 					dupTriples.push_back(dt);
 				}
 			}
-			if(j != 0) event->duplicateTriples.push_back(dupTriples);//non è il primo pacchetto, push del duplicato
-			event->attributes.push_back(attributesMap);//vector[0] primo pacchetto, >0 gli eventuali duplicati
+			if(j != 0) event->duplicateTriples.push_back(dupTriples);//it's not first PubPkt, so push duplicate PubPkt into the vector
+			event->attributes.push_back(attributesMap);//vector[0] is for first PubPkt attributes, >0 for duplicates PubPkt attributes
 		}
 		results.push_back(event);
 	}
@@ -159,6 +161,7 @@ void TRexListener::notifyRDFListeners(RDFEvent* event){
 	}
 }
 
+//Implements the lifting rule, converting PubPkts into RDFEvents, and notifies rdf output listeners
 void TRexListener::handleResult(std::set<PubPkt *> &genPkts, double procTime){
 	bool atLeastOneAll = false;
 	std::map<int, std::vector<PubPkt*> > typesOfGroupEvents;
@@ -168,22 +171,22 @@ void TRexListener::handleResult(std::set<PubPkt *> &genPkts, double procTime){
 		int type = pubPkt->getEventType();
 		Template* templateCE = templates.find(type)->second;
 		if(templateCE->isRuleAllWithin == true){
-			atLeastOneAll = true;//per chiamare la funzione alla fine
+			atLeastOneAll = true;
 			std::map<int, std::vector<PubPkt*> >::iterator it = typesOfGroupEvents.find(type);
 			if(it == typesOfGroupEvents.end()){
-				//nuovo tipo, aggiungi un vettore di eventi
+				//new complex event(=generated pkt) type, adds a vector for this type
 				std::vector<PubPkt*> eventsToGroup;
 				eventsToGroup.push_back(pubPkt);
 				typesOfGroupEvents.insert(std::pair<int, std::vector<PubPkt*> >(type, eventsToGroup));
 			}else{
-				//esiste già il tipo, aggiungilo al vettore esistente
+				//type already defined, adds the PubPkt in the existing vector
 				it->second.push_back(pubPkt);
 			}
-		}else{//la regola non è ALL
-			//pacchetto "singolo" (non ALL), genero RDF
+		}else{//rule is not ALL_WITHIN
+			//generate RDF for single PubPkt
 			RDFEvent *rdfEvent = createRDF(pubPkt, templateCE);
 			this->notifyRDFListeners(rdfEvent);
-			//notifica fatta, free memoria dell'evento (se il Listener vuole salvarselo lo copia quando lo riceve)
+			//notification done, freeing memory...
 			for(std::vector<Triple>::iterator it = rdfEvent->triples.begin(); it != rdfEvent->triples.end(); it++){
 				delete it->subject;
 				delete it->predicate;
@@ -192,10 +195,11 @@ void TRexListener::handleResult(std::set<PubPkt *> &genPkts, double procTime){
 			delete rdfEvent;
 		}
 	}
-	if(atLeastOneAll == true){
+	if(atLeastOneAll == true){//the rule has ALL_WITHIN, needs to call another function
 	   std::vector<RDFEvent*> rdfEventsAll = createRDFAll(typesOfGroupEvents, templates);
 	   for(std::vector<RDFEvent*>::iterator event = rdfEventsAll.begin(); event != rdfEventsAll.end(); event++){
 		   this->notifyRDFListeners(*event);
+		   //free memory of triples and duplicates
 		   for(std::vector<Triple>::iterator triple = (*event)->triples.begin(); triple != (*event)->triples.end(); triple++){
 			   delete triple->subject;
 		   	   delete triple->predicate;

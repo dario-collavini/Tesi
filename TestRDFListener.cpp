@@ -125,6 +125,7 @@ bool matches(const Constraint constr, const Attribute attr){
 	return true;
 }
 
+//Checks match of the first event
 bool matches(SubPkt* sub, RDFEvent* event){
 	if (event->eventType!=sub->getEventType()) return false;
 	for (int i=0; i<sub->getConstraintsNum(); i++){
@@ -135,9 +136,10 @@ bool matches(SubPkt* sub, RDFEvent* event){
 	return true;
 }
 
+//If rule is of type ALL, checks match for duplicates event and print just the ones satisfying subscription constraints
 bool matchesDuplicate(SubPkt* sub, RDFEvent* event, unsigned int n){
 	if(event->eventType!=sub->getEventType()) return false;
-	if(event->attributes[n].empty()) return true;//se la mappa è vuota,sto tirando fuori un pacchetto senza variabili, di default la All lo duplica tot volte (= numero di eventi accaduti)
+	if(event->attributes[n].empty()) return true;//map empty = event without vars, can just print duplicate triples without vars
 	for (int i=0; i<sub->getConstraintsNum(); i++){
 		Constraint constr= sub->getConstraint(i);
 		if(strcmp(event->attributes[n].find(constr.name)->second.name, constr.name) != 0) return false;
@@ -147,7 +149,7 @@ bool matchesDuplicate(SubPkt* sub, RDFEvent* event, unsigned int n){
 }
 
 
-//la memoria relativa all'evento viene liberata, se voglio processare ulteriormente devo salvarmi una copia dell'evento
+//For further processing of RDFEvent, a copy must be done (event memory is freed by TRexListener)
 void TestRDFListener::handleResult(RDFEvent* event){
 	bool isFirstEvent = true;
 	if(matches(subscription, event)){
@@ -168,7 +170,7 @@ void TestRDFListener::handleResult(RDFEvent* event){
 	}
 	for(unsigned int i = 0; i < event->duplicateTriples.size(); i++){
 		std::vector<Triple> vector = event->duplicateTriples[i];
-		if(matchesDuplicate(subscription, event, i+1)){//+1 perchè event->attributes ha anche i valori del primo evento (attributes[0])
+		if(matchesDuplicate(subscription, event, i+1)){//+1: index for duplicated events starts from 1 (attributes[0] is for the first event)
 			if(isFirstEvent){
 				printMessage("New complex event created:");
 			}
