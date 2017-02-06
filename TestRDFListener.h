@@ -8,7 +8,7 @@
 
 /**
  * RDF output listener, implementing the abstract class RDFResultListener.
- * This class in particular handles the RDFEvent and print on screen triples in a turtle-similar format.
+ * This class in particular handles the RDFEvent and prints on screen triples in a turtle-similar format.
  */
 class TestRDFListener: public RDFResultListener{
 public:
@@ -20,7 +20,7 @@ public:
 	virtual ~TestRDFListener();
 
 	/**
-	 * Takes the RDFEvent, check subscription constraints and print results.
+	 * Takes the RDFEvent, checks subscription constraints and prints results.
 	 */
 	virtual void handleResult(RDFEvent* event);
 
