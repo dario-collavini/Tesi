@@ -130,7 +130,7 @@ void RDFTRexRuleParser::enterParametrization(RDFTESLAParser::ParametrizationCont
 		char* v2 = new char[SIZE];
 		strcpy(v1, var1.c_str());
 		strcpy(v2, var2.c_str());
-		rule->addParameterBetweenStates(predId1, v1+1, predId2, v2+1);//+1 drop the '?' or '$'
+		rule->addParameterBetweenStates(predId1, v1+1, predId2, v2+1);//+1 drops the '?' or '$'
 	}
 }
 
@@ -141,9 +141,7 @@ void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ct
 		Attribute attr;
 		RDFTESLAParser::Static_referenceContext* ref = ctx->staticAttr_definition(i)->static_reference();
 		std::string name = ctx->staticAttr_definition(i)->SPARQL_VAR()->getText();
-		char* varName = new char[SIZE];
-		strcpy(varName, name.c_str());
-		attr.name = varName;
+		strcpy(attr.name, name.c_str()+1);//+1 drops the '?' or '$'
 		if(ref->INT_VAL() != NULL){
 			attr.type = INT;
 			attr.intVal = stoi(ref->INT_VAL()->getText());
@@ -155,7 +153,7 @@ void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ct
 			std::string string = ref->STRING_VAL()->getText();
 			string.erase(0,1);//erase '"'
 			string.erase(string.end()-1, string.end());//erase '"'
-			attr.stringVal = string.c_str();
+			strcpy(attr.stringVal, string.c_str());
 		}else if(ref->BOOL_VAL() != NULL){
 			attr.type = BOOL;
 			if(ref->BOOL_VAL()->getText().compare("true") == 0) attr.boolVal = true;
@@ -163,12 +161,9 @@ void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ct
 		}
 		ceTRex->addStaticAttribute(attr);
 	}
-
-
-
-
-
 	//PARAMS/AGGREGATES
+
+
 }
 
 
