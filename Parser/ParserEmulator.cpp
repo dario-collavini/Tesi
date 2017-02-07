@@ -16,7 +16,7 @@ RulePkt* ParserEmulator::parseRule(){
 	fakeConstr[0].type= STRING;
 	fakeConstr[0].op = IN;
 	strcpy(fakeConstr[0].stringVal, "");
-	rule->addRootPredicate(1, fakeConstr, 1);
+	rule->addRootPredicate(1, NULL, 0);
 	
 	Constraint c[3];
 	strcpy(c[0].name, stringValue);
@@ -29,7 +29,7 @@ RulePkt* ParserEmulator::parseRule(){
 	strcpy(c[1].stringVal, "");
 	TimeMs fiveMin(1000*60*5);
 	
-	rule->addPredicate(2, c, 2, -1, fiveMin, EACH_WITHIN);
+	rule->addPredicate(2, NULL, 0, -1, fiveMin, EACH_WITHIN);
 	rule->addParameterBetweenStates(0, stringRoom, 1, stringRoom);
 	
 	//DEFINE + WHERE template evento complesso <---output che poi dovrò passare al rdf constructor(listener)

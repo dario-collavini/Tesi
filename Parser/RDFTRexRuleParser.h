@@ -5,6 +5,7 @@
 #include "../Common/RDFStructures.h"
 #include <TRex2/Packets/RulePkt.h>
 #include <TRex2/Common/Consts.h>
+#include <TRex2/Common/Structures.h>
 #include <string>
 
 
@@ -20,6 +21,9 @@ public:
 
 	void enterNegative_predicate(RDFTESLAParser::Negative_predicateContext * ctx);
 
+	void enterParametrization(RDFTESLAParser::ParametrizationContext * ctx);
+
+	void enterDefinitions(RDFTESLAParser::DefinitionsContext * ctx);
 
 
 

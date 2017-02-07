@@ -1,5 +1,8 @@
 #include "RDFTRexRuleParser.h"
 
+//max len TRex vars
+const int SIZE = 16;
+
 void RDFTRexRuleParser::enterEvent_declaration(RDFTESLAParser::Event_declarationContext * ctx){
 	eventId_map.insert(std::pair<std::string, int>(ctx->EVT_NAME()->getText(), stoi(ctx->INT_VAL()->getText())));
 }
@@ -114,6 +117,58 @@ void RDFTRexRuleParser::enterNegative_predicate(RDFTESLAParser::Negative_predica
 		int predId2 = predicatesIds.find(neg_between->EVT_NAME(1)->getText())->second;
 		rule->addNegationBetweenStates(eventType, NULL, 0, predId1, predId2);
 	}
+}
+
+void RDFTRexRuleParser::enterParametrization(RDFTESLAParser::ParametrizationContext * ctx){
+	unsigned int numParam = ctx->packet_reference().size();
+	for(unsigned int i = 0; i < numParam; i = i + 2){
+		int predId1 = predicatesIds.find(ctx->packet_reference(i)->EVT_NAME()->getText())->second;
+		int predId2 = predicatesIds.find(ctx->packet_reference(i+1)->EVT_NAME()->getText())->second;
+		std::string var1 = ctx->packet_reference(i)->SPARQL_VAR()->getText();
+		std::string var2 = ctx->packet_reference(i+1)->SPARQL_VAR()->getText();
+		char* v1 = new char[SIZE];//freed by TRex?
+		char* v2 = new char[SIZE];
+		strcpy(v1, var1.c_str());
+		strcpy(v2, var2.c_str());
+		rule->addParameterBetweenStates(predId1, v1+1, predId2, v2+1);//+1 drop the '?' or '$'
+	}
+}
+
+void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ctx){
+	//STATIC ATTRIBUTES
+	unsigned int numAttr = ctx->staticAttr_definition().size();
+	for(unsigned int i = 0; i < numAttr; i++){
+		Attribute attr;
+		RDFTESLAParser::Static_referenceContext* ref = ctx->staticAttr_definition(i)->static_reference();
+		std::string name = ctx->staticAttr_definition(i)->SPARQL_VAR()->getText();
+		char* varName = new char[SIZE];
+		strcpy(varName, name.c_str());
+		attr.name = varName;
+		if(ref->INT_VAL() != NULL){
+			attr.type = INT;
+			attr.intVal = stoi(ref->INT_VAL()->getText());
+		}else if(ref->FLOAT_VAL() != NULL){
+			attr.type = FLOAT;
+			attr.floatVal = stof(ref->FLOAT_VAL()->getText());
+		}else if(ref->STRING_VAL() != NULL){
+			attr.type = STRING;
+			std::string string = ref->STRING_VAL()->getText();
+			string.erase(0,1);//erase '"'
+			string.erase(string.end()-1, string.end());//erase '"'
+			attr.stringVal = string.c_str();
+		}else if(ref->BOOL_VAL() != NULL){
+			attr.type = BOOL;
+			if(ref->BOOL_VAL()->getText().compare("true") == 0) attr.boolVal = true;
+			else attr.boolVal = false;
+		}
+		ceTRex->addStaticAttribute(attr);
+	}
+
+
+
+
+
+	//PARAMS/AGGREGATES
 }
 
 
