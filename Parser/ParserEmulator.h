@@ -10,7 +10,7 @@
 #include "../Common/RDFStructures.h"
 
 /**
- * Temporary class for parsing rules.
+ * Temporary class for parsing RDF-Tesla rules.
  */
 class ParserEmulator {
 public:

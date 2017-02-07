@@ -43,9 +43,9 @@ RDFEvent* createRDF(PubPkt* pkt, Template* templateCE){
 		t.subject = new char[LEN];
 		t.predicate = new char[LEN];
 		t.object = new char[LEN];
-		strcpy(t.subject, it->subject.second);
-		strcpy(t.predicate, it->predicate.second);
-		strcpy(t.object, it->object.second);
+		strcpy(t.subject, it->subject.second.c_str());
+		strcpy(t.predicate, it->predicate.second.c_str());
+		strcpy(t.object, it->object.second.c_str());
 		event->triples.push_back(t);
 	}
 	for(int i = 0; i < pkt->getAttributesNum(); i++){
@@ -54,13 +54,13 @@ RDFEvent* createRDF(PubPkt* pkt, Template* templateCE){
 		attributesMap.insert(std::make_pair(varName, att)); //attributes saved for final evaluation of subscriptions
 		for(unsigned int i = 0; i < templateCE->triples.size(); i++){
 			TripleTemplate temp = templateCE->triples[i];
-			if(temp.subject.first == IS_VAR && strcmp((temp.subject.second+1), varName) == 0 ){//+1 removes the '?' or '$' of sparql var
+			if(temp.subject.first == IS_VAR && strcmp((temp.subject.second.c_str()+1), varName) == 0 ){//+1 removes the '?' or '$' of sparql var
 				strcpy(event->triples[i].subject, getValue(att).c_str());
 			}
-			if(temp.predicate.first == IS_VAR && strcmp((temp.predicate.second+1), varName) == 0 ){
+			if(temp.predicate.first == IS_VAR && strcmp((temp.predicate.second.c_str()+1), varName) == 0 ){
 				strcpy(event->triples[i].predicate, getValue(att).c_str());
 			}
-			if(temp.object.first == IS_VAR && strcmp((temp.object.second+1), varName) == 0 ){
+			if(temp.object.first == IS_VAR && strcmp((temp.object.second.c_str()+1), varName) == 0 ){
 				strcpy(event->triples[i].object, getValue(att).c_str());
 			}
 		}
@@ -95,9 +95,9 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOf
 					t.subject = new char[LEN];
 					t.predicate = new char[LEN];
 					t.object = new char[LEN];
-					strcpy(t.subject, temp.subject.second);
-					strcpy(t.predicate,temp.predicate.second);
-					strcpy(t.object, temp.object.second);
+					strcpy(t.subject, temp.subject.second.c_str());
+					strcpy(t.predicate,temp.predicate.second.c_str());
+					strcpy(t.object, temp.object.second.c_str());
 					if(temp.subject.first == IS_VAR){
 						pubPkt->getAttributeIndexAndType(t.subject+1, index, attType);//+1 removes '?' or '$' of sparql var
 						att = pubPkt->getAttribute(index);
@@ -122,9 +122,9 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOf
 					dt.subject = new char[LEN];
 					dt.predicate = new char[LEN];
 					dt.object = new char[LEN];
-					strcpy(dt.subject, temp.subject.second);
-					strcpy(dt.predicate,temp.predicate.second);
-					strcpy(dt.object, temp.object.second);
+					strcpy(dt.subject, temp.subject.second.c_str());
+					strcpy(dt.predicate,temp.predicate.second.c_str());
+					strcpy(dt.object, temp.object.second.c_str());
 					if(temp.subject.first == IS_VAR){
 						pubPkt->getAttributeIndexAndType(dt.subject+1, index, attType);
 						att = pubPkt->getAttribute(index);

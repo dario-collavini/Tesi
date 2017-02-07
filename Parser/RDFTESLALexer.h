@@ -14,11 +14,11 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, ASSIGN = 19, DEFINE = 20, 
-    FROM = 21, WITH = 22, WHERE = 23, CONSUMING = 24, VALTYPE = 25, SEL_POLICY = 26, 
-    AGGR_FUN = 27, OPERATOR = 28, BINOP_MUL = 29, BINOP_ADD = 30, INT_VAL = 31, 
-    FLOAT_VAL = 32, BOOL_VAL = 33, STRING_VAL = 34, SPARQL_QUERY = 35, EVT_NAME = 36, 
-    URI_NAME = 37, SPARQL_VAR = 38, WS = 39
+    T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
+    ASSIGN = 21, DEFINE = 22, FROM = 23, WITH = 24, WHERE = 25, CONSUMING = 26, 
+    VALTYPE = 27, SEL_POLICY = 28, AGGR_FUN = 29, OPERATOR = 30, BINOP_MUL = 31, 
+    BINOP_ADD = 32, INT_VAL = 33, FLOAT_VAL = 34, BOOL_VAL = 35, STRING_VAL = 36, 
+    SPARQL_QUERY = 37, EVT_NAME = 38, URI_NAME = 39, SPARQL_VAR = 40, WS = 41
   };
 
   RDFTESLALexer(antlr4::CharStream *input);

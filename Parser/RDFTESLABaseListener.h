@@ -70,20 +70,17 @@ public:
   virtual void enterNegative_predicate(RDFTESLAParser::Negative_predicateContext * /*ctx*/) override { }
   virtual void exitNegative_predicate(RDFTESLAParser::Negative_predicateContext * /*ctx*/) override { }
 
-  virtual void enterBetween_predicate(RDFTESLAParser::Between_predicateContext * /*ctx*/) override { }
-  virtual void exitBetween_predicate(RDFTESLAParser::Between_predicateContext * /*ctx*/) override { }
-
   virtual void enterPattern_predicate(RDFTESLAParser::Pattern_predicateContext * /*ctx*/) override { }
   virtual void exitPattern_predicate(RDFTESLAParser::Pattern_predicateContext * /*ctx*/) override { }
-
-  virtual void enterPattern_b_predicate(RDFTESLAParser::Pattern_b_predicateContext * /*ctx*/) override { }
-  virtual void exitPattern_b_predicate(RDFTESLAParser::Pattern_b_predicateContext * /*ctx*/) override { }
 
   virtual void enterEvent_declaration(RDFTESLAParser::Event_declarationContext * /*ctx*/) override { }
   virtual void exitEvent_declaration(RDFTESLAParser::Event_declarationContext * /*ctx*/) override { }
 
   virtual void enterEvent_declarations(RDFTESLAParser::Event_declarationsContext * /*ctx*/) override { }
   virtual void exitEvent_declarations(RDFTESLAParser::Event_declarationsContext * /*ctx*/) override { }
+
+  virtual void enterParametrization(RDFTESLAParser::ParametrizationContext * /*ctx*/) override { }
+  virtual void exitParametrization(RDFTESLAParser::ParametrizationContext * /*ctx*/) override { }
 
   virtual void enterPrefix_uri(RDFTESLAParser::Prefix_uriContext * /*ctx*/) override { }
   virtual void exitPrefix_uri(RDFTESLAParser::Prefix_uriContext * /*ctx*/) override { }
@@ -93,6 +90,15 @@ public:
 
   virtual void enterUri(RDFTESLAParser::UriContext * /*ctx*/) override { }
   virtual void exitUri(RDFTESLAParser::UriContext * /*ctx*/) override { }
+
+  virtual void enterSub(RDFTESLAParser::SubContext * /*ctx*/) override { }
+  virtual void exitSub(RDFTESLAParser::SubContext * /*ctx*/) override { }
+
+  virtual void enterPred(RDFTESLAParser::PredContext * /*ctx*/) override { }
+  virtual void exitPred(RDFTESLAParser::PredContext * /*ctx*/) override { }
+
+  virtual void enterObj(RDFTESLAParser::ObjContext * /*ctx*/) override { }
+  virtual void exitObj(RDFTESLAParser::ObjContext * /*ctx*/) override { }
 
   virtual void enterTriple(RDFTESLAParser::TripleContext * /*ctx*/) override { }
   virtual void exitTriple(RDFTESLAParser::TripleContext * /*ctx*/) override { }

@@ -55,9 +55,9 @@ typedef struct SparqlAnswer {
  * Single triple pattern of a RDF complex event, extracted from parsing a rule.
  */
 typedef struct RDFTripleTemplate {
-	std::pair<IsVar, const char*> subject;//TODO uso std::string?
-	std::pair<IsVar, const char*> predicate;
-	std::pair<IsVar, const char*> object;
+	std::pair<IsVar, std::string> subject;
+	std::pair<IsVar, std::string> predicate;
+	std::pair<IsVar, std::string> object;
 } TripleTemplate;
 
 /**

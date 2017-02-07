@@ -68,20 +68,17 @@ public:
   virtual void enterNegative_predicate(RDFTESLAParser::Negative_predicateContext *ctx) = 0;
   virtual void exitNegative_predicate(RDFTESLAParser::Negative_predicateContext *ctx) = 0;
 
-  virtual void enterBetween_predicate(RDFTESLAParser::Between_predicateContext *ctx) = 0;
-  virtual void exitBetween_predicate(RDFTESLAParser::Between_predicateContext *ctx) = 0;
-
   virtual void enterPattern_predicate(RDFTESLAParser::Pattern_predicateContext *ctx) = 0;
   virtual void exitPattern_predicate(RDFTESLAParser::Pattern_predicateContext *ctx) = 0;
-
-  virtual void enterPattern_b_predicate(RDFTESLAParser::Pattern_b_predicateContext *ctx) = 0;
-  virtual void exitPattern_b_predicate(RDFTESLAParser::Pattern_b_predicateContext *ctx) = 0;
 
   virtual void enterEvent_declaration(RDFTESLAParser::Event_declarationContext *ctx) = 0;
   virtual void exitEvent_declaration(RDFTESLAParser::Event_declarationContext *ctx) = 0;
 
   virtual void enterEvent_declarations(RDFTESLAParser::Event_declarationsContext *ctx) = 0;
   virtual void exitEvent_declarations(RDFTESLAParser::Event_declarationsContext *ctx) = 0;
+
+  virtual void enterParametrization(RDFTESLAParser::ParametrizationContext *ctx) = 0;
+  virtual void exitParametrization(RDFTESLAParser::ParametrizationContext *ctx) = 0;
 
   virtual void enterPrefix_uri(RDFTESLAParser::Prefix_uriContext *ctx) = 0;
   virtual void exitPrefix_uri(RDFTESLAParser::Prefix_uriContext *ctx) = 0;
@@ -91,6 +88,15 @@ public:
 
   virtual void enterUri(RDFTESLAParser::UriContext *ctx) = 0;
   virtual void exitUri(RDFTESLAParser::UriContext *ctx) = 0;
+
+  virtual void enterSub(RDFTESLAParser::SubContext *ctx) = 0;
+  virtual void exitSub(RDFTESLAParser::SubContext *ctx) = 0;
+
+  virtual void enterPred(RDFTESLAParser::PredContext *ctx) = 0;
+  virtual void exitPred(RDFTESLAParser::PredContext *ctx) = 0;
+
+  virtual void enterObj(RDFTESLAParser::ObjContext *ctx) = 0;
+  virtual void exitObj(RDFTESLAParser::ObjContext *ctx) = 0;
 
   virtual void enterTriple(RDFTESLAParser::TripleContext *ctx) = 0;
   virtual void exitTriple(RDFTESLAParser::TripleContext *ctx) = 0;

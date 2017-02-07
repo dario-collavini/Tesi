@@ -14,11 +14,11 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, ASSIGN = 19, DEFINE = 20, 
-    FROM = 21, WITH = 22, WHERE = 23, CONSUMING = 24, VALTYPE = 25, SEL_POLICY = 26, 
-    AGGR_FUN = 27, OPERATOR = 28, BINOP_MUL = 29, BINOP_ADD = 30, INT_VAL = 31, 
-    FLOAT_VAL = 32, BOOL_VAL = 33, STRING_VAL = 34, SPARQL_QUERY = 35, EVT_NAME = 36, 
-    URI_NAME = 37, SPARQL_VAR = 38, WS = 39
+    T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
+    ASSIGN = 21, DEFINE = 22, FROM = 23, WITH = 24, WHERE = 25, CONSUMING = 26, 
+    VALTYPE = 27, SEL_POLICY = 28, AGGR_FUN = 29, OPERATOR = 30, BINOP_MUL = 31, 
+    BINOP_ADD = 32, INT_VAL = 33, FLOAT_VAL = 34, BOOL_VAL = 35, STRING_VAL = 36, 
+    SPARQL_QUERY = 37, EVT_NAME = 38, URI_NAME = 39, SPARQL_VAR = 40, WS = 41
   };
 
   enum {
@@ -28,11 +28,11 @@ public:
     RuleAttr_constraint = 9, RuleAttr_parameter = 10, RulePredicate = 11, 
     RuleEvent_alias = 12, RuleTerminator = 13, RulePositive_predicate = 14, 
     RuleNeg_one_reference = 15, RuleNeg_between = 16, RuleNegative_predicate = 17, 
-    RuleBetween_predicate = 18, RulePattern_predicate = 19, RulePattern_b_predicate = 20, 
-    RuleEvent_declaration = 21, RuleEvent_declarations = 22, RulePrefix_uri = 23, 
-    RuleFull_uri = 24, RuleUri = 25, RuleTriple = 26, RuleRdf_pattern = 27, 
-    RuleCe_definition = 28, RulePattern = 29, RuleDefinitions = 30, RuleConsuming = 31, 
-    RuleEnding_rule = 32, RuleTrex_rdf_rule = 33
+    RulePattern_predicate = 18, RuleEvent_declaration = 19, RuleEvent_declarations = 20, 
+    RuleParametrization = 21, RulePrefix_uri = 22, RuleFull_uri = 23, RuleUri = 24, 
+    RuleSub = 25, RulePred = 26, RuleObj = 27, RuleTriple = 28, RuleRdf_pattern = 29, 
+    RuleCe_definition = 30, RulePattern = 31, RuleDefinitions = 32, RuleConsuming = 33, 
+    RuleEnding_rule = 34, RuleTrex_rdf_rule = 35
   };
 
   RDFTESLAParser(antlr4::TokenStream *input);
@@ -67,14 +67,16 @@ public:
   class Neg_one_referenceContext;
   class Neg_betweenContext;
   class Negative_predicateContext;
-  class Between_predicateContext;
   class Pattern_predicateContext;
-  class Pattern_b_predicateContext;
   class Event_declarationContext;
   class Event_declarationsContext;
+  class ParametrizationContext;
   class Prefix_uriContext;
   class Full_uriContext;
   class UriContext;
+  class SubContext;
+  class PredContext;
+  class ObjContext;
   class TripleContext;
   class Rdf_patternContext;
   class Ce_definitionContext;
@@ -353,20 +355,6 @@ public:
 
   Negative_predicateContext* negative_predicate();
 
-  class  Between_predicateContext : public antlr4::ParserRuleContext {
-  public:
-    Between_predicateContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    std::vector<antlr4::tree::TerminalNode *> EVT_NAME();
-    antlr4::tree::TerminalNode* EVT_NAME(size_t i);
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  Between_predicateContext* between_predicate();
-
   class  Pattern_predicateContext : public antlr4::ParserRuleContext {
   public:
     Pattern_predicateContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -380,21 +368,6 @@ public:
   };
 
   Pattern_predicateContext* pattern_predicate();
-
-  class  Pattern_b_predicateContext : public antlr4::ParserRuleContext {
-  public:
-    Pattern_b_predicateContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    Positive_predicateContext *positive_predicate();
-    Between_predicateContext *between_predicate();
-    Negative_predicateContext *negative_predicate();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  Pattern_b_predicateContext* pattern_b_predicate();
 
   class  Event_declarationContext : public antlr4::ParserRuleContext {
   public:
@@ -423,6 +396,20 @@ public:
   };
 
   Event_declarationsContext* event_declarations();
+
+  class  ParametrizationContext : public antlr4::ParserRuleContext {
+  public:
+    ParametrizationContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<Packet_referenceContext *> packet_reference();
+    Packet_referenceContext* packet_reference(size_t i);
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  ParametrizationContext* parametrization();
 
   class  Prefix_uriContext : public antlr4::ParserRuleContext {
   public:
@@ -465,14 +452,55 @@ public:
 
   UriContext* uri();
 
+  class  SubContext : public antlr4::ParserRuleContext {
+  public:
+    SubContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    UriContext *uri();
+    antlr4::tree::TerminalNode *SPARQL_VAR();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  SubContext* sub();
+
+  class  PredContext : public antlr4::ParserRuleContext {
+  public:
+    PredContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    UriContext *uri();
+    antlr4::tree::TerminalNode *SPARQL_VAR();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  PredContext* pred();
+
+  class  ObjContext : public antlr4::ParserRuleContext {
+  public:
+    ObjContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    UriContext *uri();
+    antlr4::tree::TerminalNode *SPARQL_VAR();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  ObjContext* obj();
+
   class  TripleContext : public antlr4::ParserRuleContext {
   public:
     TripleContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    std::vector<UriContext *> uri();
-    UriContext* uri(size_t i);
-    std::vector<antlr4::tree::TerminalNode *> SPARQL_VAR();
-    antlr4::tree::TerminalNode* SPARQL_VAR(size_t i);
+    SubContext *sub();
+    PredContext *pred();
+    ObjContext *obj();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -516,8 +544,6 @@ public:
     TerminatorContext *terminator();
     std::vector<Pattern_predicateContext *> pattern_predicate();
     Pattern_predicateContext* pattern_predicate(size_t i);
-    std::vector<Pattern_b_predicateContext *> pattern_b_predicate();
-    Pattern_b_predicateContext* pattern_b_predicate(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -580,7 +606,7 @@ public:
     PatternContext *pattern();
     Ending_ruleContext *ending_rule();
     antlr4::tree::TerminalNode *WITH();
-    Packet_referenceContext *packet_reference();
+    ParametrizationContext *parametrization();
     antlr4::tree::TerminalNode *WHERE();
     DefinitionsContext *definitions();
     antlr4::tree::TerminalNode *CONSUMING();

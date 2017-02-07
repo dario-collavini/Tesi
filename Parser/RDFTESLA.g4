@@ -48,7 +48,7 @@ SPARQL_QUERY :   '['
             )
         |   ~('\\'|'"') {ss << ((char)_input->LA(-1));}
         )*
-        '"'
+        ']'
         {str = ss.str();}
     ;
 EVT_NAME   : ('A' .. 'Z') (('A' .. 'Z') | ('a' .. 'z') | ('0' .. '9') | '_')*;
@@ -67,26 +67,28 @@ staticAttr_definition: SPARQL_VAR ':=' static_reference;
 attr_definition: SPARQL_VAR ':=' expr;
 attr_constraint: SPARQL_VAR OPERATOR static_reference;
 attr_parameter: '[' VALTYPE ']' SPARQL_VAR OPERATOR expr;
-predicate : EVT_NAME ':=' SPARQL_QUERY event_alias? ;
+predicate : EVT_NAME (':=' SPARQL_QUERY event_alias?)? ;
 event_alias : 'as' EVT_NAME;
 terminator : predicate;
 positive_predicate : 'and' SEL_POLICY predicate 'within' INT_VAL 'from' EVT_NAME;
 neg_one_reference: ('within' INT_VAL 'from' EVT_NAME);
 neg_between: ('between' EVT_NAME 'and' EVT_NAME);
 negative_predicate : 'and' 'not' predicate (neg_one_reference | neg_between);
-between_predicate : 'between' EVT_NAME 'and' EVT_NAME;
 pattern_predicate : positive_predicate | negative_predicate;
-pattern_b_predicate : positive_predicate | between_predicate| negative_predicate;
 event_declaration : INT_VAL '=>' EVT_NAME;
 event_declarations : event_declaration (',' event_declaration)*;
+parametrization : packet_reference '=' packet_reference (',' packet_reference '=' packet_reference)*;
 prefix_uri : URI_NAME ':' URI_NAME;
 full_uri : '<' URI_NAME '>';
 uri : prefix_uri | full_uri;  
-triple : (uri | SPARQL_VAR) (uri | SPARQL_VAR) (uri | SPARQL_VAR) '.' ; 
+sub : uri | SPARQL_VAR;
+pred : uri | SPARQL_VAR; 
+obj : uri | SPARQL_VAR;
+triple : sub ' ' pred ' ' obj '.' ; 
 rdf_pattern : '[' (triple)* ']';
 ce_definition : EVT_NAME ':=' rdf_pattern ; 
-pattern : terminator ((pattern_predicate)* | pattern_predicate (pattern_b_predicate)*);
+pattern : terminator (pattern_predicate)*;
 definitions : (staticAttr_definition | attr_definition) (',' (staticAttr_definition | attr_definition))*;
 consuming : EVT_NAME (',' EVT_NAME)*;
 ending_rule : ';';
-trex_rdf_rule : ASSIGN event_declarations DEFINE ce_definition FROM pattern (WITH packet_reference)? (WHERE definitions)? (CONSUMING consuming)? ending_rule;
+trex_rdf_rule : ASSIGN event_declarations DEFINE ce_definition FROM pattern (WITH parametrization)? (WHERE definitions)? (CONSUMING consuming)? ending_rule;

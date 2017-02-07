@@ -33,6 +33,7 @@ int main(int argc, char* argv[])
 *
 *	EventConverter: 6)implementa traduzione eventoRDF ----> eventoTesla (lowering rule) 
 */
+
 	const char* type = "seq";
 	const char* kb = "./Files/kbradio.ttl";
 	const char* dlogRules = "./Files/inf.dlog";
