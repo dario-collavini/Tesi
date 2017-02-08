@@ -16,12 +16,49 @@ bool checkAllWithin(RDFTESLAParser::Positive_predicateContext* ctx){
 }
 
 CompKind getCompKind(RDFTESLAParser::Positive_predicateContext* ctx) {
-		std::string sel = ctx->SEL_POLICY()->getText();
-		if(sel.compare("each") == 0 || sel.compare("all") == 0 ) return EACH_WITHIN;
-		else if (sel.compare("last") == 0)  return LAST_WITHIN;
-		else if (sel.compare("first") == 0) return FIRST_WITHIN;
-		else return EACH_WITHIN;
-	}
+	std::string sel = ctx->SEL_POLICY()->getText();
+	if(sel.compare("each") == 0 || sel.compare("all") == 0 ) return EACH_WITHIN;
+	else if (sel.compare("last") == 0)  return LAST_WITHIN;
+	else if (sel.compare("first") == 0) return FIRST_WITHIN;
+	else return EACH_WITHIN;
+}
+
+AggregateFun getAggregateFun(std::string fun) {
+	if (fun.compare("AVG") == 0) 	 return AVG;
+	if (fun.compare("SUM") == 0) 	 return SUM;
+	if (fun.compare("COUNT") == 0) return COUNT;
+	if (fun.compare("MIN") == 0) 	 return MIN;
+	if (fun.compare("MAX") == 0) 	 return MAX;
+	else return NULL;
+}
+
+Op getConstrOp(std::string source) {
+	if(source.compare("0") == 0)		return EQ;
+	if (source.compare(">") == 0)	return GT;
+	if (source.compare("<") == 0)	return LT;
+	if (source.compare("<=") == 0)	return LE;
+	if (source.compare(">=") == 0)	return GE;
+	if (source.compare("!=") == 0) 	return NE;
+	else return NULL;
+}
+
+ValType getValType(std::string vtype) {
+	if (vtype.compare("int") == 0) 		 return INT;
+	else if (vtype.compare("float") == 0)  return FLOAT;
+	else if (vtype.compare("bool") == 0) 	 return BOOL;
+	else if (vtype.compare("string") == 0) return STRING;
+	else return NULL;
+}
+
+Op getBinOp(std::string op) {
+	if (op.compare("+") == 0) return ADD;
+	else if (op.compare("-") == 0) return SUB;
+	else if (op.compare("/") == 0) return DIV;
+	else if (op.compare("*") == 0) return MUL;
+	else if (op.compare("&") == 0) return AND;
+	else if (op.compare("|") == 0) return OR;
+	else return NULL;
+}
 
 //Template memory freed by destructor of RDFConstructor
 void RDFTRexRuleParser::enterCe_definition(RDFTESLAParser::Ce_definitionContext * ctx){
@@ -134,6 +171,150 @@ void RDFTRexRuleParser::enterParametrization(RDFTESLAParser::ParametrizationCont
 	}
 }
 
+
+
+OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprContext* expr, OpTree* tree, ValType valType) {
+		if (expr->param_atom() != NULL) {
+			//This is a leaf!
+			RDFTESLAParser::Param_atomContext* ctxParam = expr->param_atom();
+			StaticValueReference* value;
+			ValType vtype;
+			if (ctxParam->static_reference() != NULL) {
+				if (ctxParam->static_reference()->INT_VAL() != NULL) {
+					int val = stoi(ctxParam->static_reference()->INT_VAL()->getText());
+					value = new StaticValueReference(val);
+					vtype = INT;
+				}
+				else if (ctxParam->static_reference()->FLOAT_VAL() != NULL) {
+					float val = stof(ctxParam->static_reference()->FLOAT_VAL()->getText());
+					value = new StaticValueReference(val);
+					vtype = FLOAT;
+				}
+				else if (ctxParam->static_reference()->BOOL_VAL() != NULL) {
+					bool b;
+					if(ctxParam->static_reference()->BOOL_VAL()->getText().compare("true") == 0) b= true;
+					else b = false;
+					value = new StaticValueReference(b);
+					vtype = BOOL;
+				}
+				else if (ctxParam->static_reference()->STRING_VAL() != NULL) {
+					std::string string = ctxParam->static_reference()->STRING_VAL()->getText();
+					//remove quotes from the string
+					string.erase(0,1);//erase '"'
+					string.erase(string.end()-1, string.end());//erase '"'
+					value = new StaticValueReference(string);
+					vtype = STRING;
+				}
+				return new OpTree(value, vtype);
+			}
+			else if (ctxParam->packet_reference()!=NULL) {
+				//this is a reference to an attribute from another query
+				RDFTESLAParser::Packet_referenceContext* pkt_ctx = ctxParam->packet_reference();
+				//I need to figure out the idx of the event in the sequence; it's not an aggregate; attr_name
+				int predId = predicatesIds.find(pkt_ctx->EVT_NAME()->getText())->second;
+				std::string varName = pkt_ctx->SPARQL_VAR()->getText();
+				char* name = new char[SIZE];
+				strcpy(name, varName.c_str());
+				RulePktValueReference* ref = new RulePktValueReference(predId, name+1 , STATE);//+1 drops '?' or '$'
+				return new OpTree(ref, valType);
+			}
+		}
+		else if (expr->aggregate_atom() != NULL) {
+			//This is a reference to an aggregate
+			RDFTESLAParser::Aggregate_atomContext* agCtx = expr->aggregate_atom();
+			AggregateFun fun = getAggregateFun(agCtx->AGGR_FUN()->getText());
+			int predId = predicatesIds.find(agCtx->packet_reference()->EVT_NAME()->getText())->second;
+			if (agCtx->packet_reference() != NULL) {
+				int constrLen = agCtx->attr_constraint().size() + agCtx->attr_parameter().size();
+				Constraint* c = new Constraint[constrLen];
+				for(unsigned int i = 0; i < agCtx->attr_constraint().size(); i++){
+					RDFTESLAParser::Attr_constraintContext* constr = agCtx->attr_constraint(i);
+					std::string nameString = constr->SPARQL_VAR()->getText();
+					char* name = new char[SIZE];
+					strcpy(name, nameString.c_str());
+					c[i].name = name+1;//+1 drops '?' or '$'
+					if(constr->static_reference()->INT_VAL() != NULL){
+						c[i].type = INT;
+						c[i].op = getConstrOp(constr->OPERATOR()->getText());
+						c[i].intVal = stoi(constr->static_reference()->INT_VAL()->getText());
+					}else if(constr->static_reference()->FLOAT_VAL() != NULL){
+						c[i].type = FLOAT;
+						c[i].op = getConstrOp(constr->OPERATOR()->getText());
+						c[i].floatVal = stof(constr->static_reference()->FLOAT_VAL()->getText());
+					}else if(constr->static_reference()->BOOL_VAL() != NULL){
+						c[i].type = BOOL;
+						c[i].op = getConstrOp(constr->OPERATOR()->getText());
+						if(constr->static_reference()->BOOL_VAL()->getText().compare("true") == 0) c[i].boolVal = true;
+						else c[i].boolVal = false;
+					}else if(constr->static_reference()->STRING_VAL() != NULL){
+						c[i].type = STRING;
+						c[i].op = getConstrOp(constr->OPERATOR()->getText());
+						std::string string = constr->static_reference()->STRING_VAL()->getText();
+						string.erase(0,1);//erase '"'
+						string.erase(string.end()-1, string.end());//erase '"'
+						strcpy(c[i].stringVal, string.c_str());
+					}
+				}
+				for(unsigned int j = 0; j < agCtx->attr_parameter().size(); j++){
+					RDFTESLAParser::Attr_parameterContext* constrParam = agCtx->attr_parameter(j);
+					std::string nameString = constrParam->SPARQL_VAR()->getText();
+					char* name = new char[SIZE];
+					strcpy(name, nameString.c_str());
+					RulePktValueReference* sparqlValue = new RulePktValueReference(predId, name+1, STATE);
+					OpTree* varTree = new OpTree(sparqlValue, getConstrOp(constrParam->VALTYPE()->getText()));
+					if(constrParam->expr()->param_atom() != NULL){
+						 rule->addComplexParameter(getConstrOp(constrParam->OPERATOR()->getText()), getValType(constrParam->VALTYPE()->getText()) , varTree, buildOpTree(constrParam->expr(), getValType(constrParam->VALTYPE()->getText())));
+					}else if(constrParam->expr()->aggregate_atom() != NULL){
+						rule->addComplexParameterForAggregate(getConstrOp(constrParam->OPERATOR()->getText()), getValType(constrParam->VALTYPE()->getText()), varTree, buildOpTree(constrParam->expr(), getValType(constrParam->VALTYPE()->getText())));
+					}
+				}
+				std::string predName = agCtx->packet_reference()->EVT_NAME()->getText();
+				std::string attrName = agCtx->packet_reference()->SPARQL_VAR()->getText();
+				int type = eventId_map.find(predName)->second;
+				char* name = new char[SIZE];
+				strcpy(name, attrName.c_str());
+				if(agCtx->agg_one_reference() != NULL){
+					TimeMs time(stoi(agCtx->agg_one_reference()->INT_VAL()->getText()));
+					int predId = predicatesIds.find(agCtx->agg_one_reference()->EVT_NAME()->getText())->second;
+					rule->addTimeBasedAggregate(type, c, constrLen, predId, time, name+1, fun);
+					aggregateCount++;
+				}else if(agCtx->agg_between() != NULL){
+					int predId1 = predicatesIds.find(agCtx->agg_between()->EVT_NAME(0)->getText())->second;
+					int predId2 = predicatesIds.find(agCtx->agg_between()->EVT_NAME(1)->getText())->second;
+					rule->addAggregateBetweenStates(type, c, constrLen, predId1, predId2, name+1, fun);
+					aggregateCount++;
+				}
+				RulePktValueReference* ref  = new RulePktValueReference(aggregateCount-1);
+				return new OpTree(ref, valType);
+			}
+		}
+		else {
+			//this is an inner node
+			std::vector<RDFTESLAParser::ExprContext*> exprVector = expr->expr();
+			for(unsigned int m = 0; m < exprVector.size(); m++){
+				RDFTESLAParser::ExprContext* subExpr = expr->expr(m);
+				Op op;
+				if(expr->BINOP_MUL() != NULL){
+					op = getBinOp(expr->BINOP_MUL()->getText());
+				}else if(expr->BINOP_ADD() != NULL){
+					op = getBinOp(expr->BINOP_ADD()->getText());
+				}
+				if(tree != NULL){
+					tree = new OpTree(tree, recursivelyNavigateExpression(subExpr, tree, valType), op, INT);
+				}else{
+					tree = recursivelyNavigateExpression(subExpr, tree, valType);
+				}
+			}
+		}
+		return tree;
+	}
+
+OpTree* RDFTRexRuleParser::buildOpTree(RDFTESLAParser::ExprContext* expr, ValType valType){
+	OpTree* tree = NULL;
+	tree = recursivelyNavigateExpression(expr, tree, valType);
+	return tree;
+}
+
 void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ctx){
 	//STATIC ATTRIBUTES
 	unsigned int numAttr = ctx->staticAttr_definition().size();
@@ -162,11 +343,36 @@ void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ct
 		ceTRex->addStaticAttribute(attr);
 	}
 	//PARAMS/AGGREGATES
+	unsigned int numParam = ctx->attr_definition().size();
+	for(unsigned int j = 0; j < numParam; j++){
+		char* name = new char[SIZE];
+		ValType type;
+		std::string string = ctx->attr_definition(j)->SPARQL_VAR()->getText();
+		std::string valtype = ctx->attr_definition(j)->VALTYPE()->getText();
+		strcpy(name, string.c_str());
+		if(valtype.compare("string") == 0) type = STRING;
+		else if(valtype.compare("int") == 0) type = INT;
+		else if(valtype.compare("float") == 0) type = FLOAT;
+		else if(valtype.compare("bool") == 0) type = BOOL;
+		OpTree* tree = buildOpTree(ctx->attr_definition(j)->expr(), type);
+		ceTRex->addAttribute(name+1, tree);//+1 drops '?' or '$'
+	}
 
+}
+
+void RDFTRexRuleParser::enterConsuming(RDFTESLAParser::ConsumingContext * ctx){
+	for(unsigned int i = 0; i < ctx->EVT_NAME().size(); i++){
+		int predId = predicatesIds.find(ctx->EVT_NAME(i)->getText())->second;
+		rule->addConsuming(predId);
+	}
+}
+
+void RDFTRexRuleParser::parse(std::string rule, RDFStore* rdfstore, TRexEngine* engine, RDFConstructor* constructor){
 
 }
 
 
+//TODO aggiungere between a and b per predicati (usando getWinbetween per ricavare il time span)
 
 
 

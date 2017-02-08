@@ -6,6 +6,12 @@
 #include <TRex2/Packets/RulePkt.h>
 #include <TRex2/Common/Consts.h>
 #include <TRex2/Common/Structures.h>
+#include <TRex2/Packets/StaticValueReference.h>
+#include <TRex2/Packets/RulePktValueReference.h>
+#include <TRex2/Common/OpTree.h>
+#include <TRex2/Engine/TRexEngine.h>
+#include "../RDFStore/RDFStore.h"
+#include "../RDFConstructor/RDFConstructor.h"
 #include <string>
 
 
@@ -25,16 +31,22 @@ public:
 
 	void enterDefinitions(RDFTESLAParser::DefinitionsContext * ctx);
 
+	void enterConsuming(RDFTESLAParser::ConsumingContext * ctx);
 
+	void parse(std::string rule, RDFStore* rdfstore, TRexEngine* engine, RDFConstructor* constructor);
 
 private:
 	 std::map<std::string, int> eventId_map;
 	 std::map<std::string, int> predicatesIds;
 	 int predicateCount = 0;
+	 int aggregateCount = 0;
 	 Template* templateCE;
 	 CompositeEventTemplate* ceTRex;
 	 std::vector<std::tuple<int, std::string, std::string> > queries;
 	 RulePkt* rule;
+
+	 OpTree* buildOpTree(RDFTESLAParser::ExprContext* expr, ValType valType);
+	 OpTree* recursivelyNavigateExpression(RDFTESLAParser::ExprContext* expr, OpTree* tree, ValType valType);
 
 };
 

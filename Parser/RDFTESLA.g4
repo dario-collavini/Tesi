@@ -64,7 +64,7 @@ agg_between : ('between' EVT_NAME 'and' EVT_NAME);
 aggregate_atom : AGGR_FUN '(' packet_reference '(' ((attr_parameter | attr_constraint) (',' (attr_parameter | attr_constraint))* )? ')' ')' (agg_one_reference | agg_between) ; 
 expr: expr BINOP_MUL expr | expr BINOP_ADD expr | '(' expr ')' | (param_atom | aggregate_atom);
 staticAttr_definition: SPARQL_VAR ':=' static_reference;
-attr_definition: SPARQL_VAR ':=' expr;
+attr_definition: '(' VALTYPE ')' SPARQL_VAR ':=' expr;
 attr_constraint: SPARQL_VAR OPERATOR static_reference;
 attr_parameter: '[' VALTYPE ']' SPARQL_VAR OPERATOR expr;
 predicate : EVT_NAME (':=' SPARQL_QUERY event_alias?)? ;
