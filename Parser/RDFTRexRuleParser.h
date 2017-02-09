@@ -54,4 +54,3 @@ private:
 	 OpTree* recursivelyNavigateExpression(RDFTESLAParser::ExprContext* expr, OpTree* tree, ValType valType);
 
 };
-//TODO rifare file grammatica RDFTESLA.g4 con antlr(ci sono errori)

@@ -72,7 +72,7 @@ attr_parameter: '[' VALTYPE ']' SPARQL_VAR OPERATOR expr;
 predicate : EVT_NAME (':=' SPARQL_QUERY event_alias?)? ;
 event_alias : 'as' EVT_NAME;
 terminator : predicate;
-positive_predicate : 'and' SEL_POLICY predicate 'within' INT_VAL 'from' EVT_NAME;
+positive_predicate : 'and' SEL_POLICY predicate (neg_one_reference | neg_between);
 neg_one_reference: ('within' INT_VAL 'from' EVT_NAME);
 neg_between: ('between' EVT_NAME 'and' EVT_NAME);
 negative_predicate : 'and' 'not' predicate (neg_one_reference | neg_between);

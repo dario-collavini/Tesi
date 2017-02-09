@@ -113,23 +113,45 @@ void RDFTRexRuleParser::enterTerminator(RDFTESLAParser::TerminatorContext * ctx)
 
 void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predicateContext * ctx){
 	int eventType = eventId_map.find(ctx->predicate()->EVT_NAME()->getText())->second;
-	int predId = predicatesIds.find(ctx->EVT_NAME()->getText())->second;
-	if(ctx->predicate()->SPARQL_QUERY() != NULL){
-		std::string query = ctx->predicate()->SPARQL_QUERY()->getText();
-		query.erase(0,1);//erase '['
-		query.erase(query.end()-1, query.end());//erase ']'
-		queries.push_back(std::make_tuple(eventType, ctx->predicate()->EVT_NAME()->getText(), query));
-		if(ctx->predicate()->event_alias() != NULL){
-			eventId_map.insert(std::pair<std::string, int>(ctx->predicate()->event_alias()->EVT_NAME()->getText(), eventType));
+	//TODOdifferenziare within e between
+	if(ctx->neg_one_reference() != NULL){
+		int predId = predicatesIds.find(ctx->neg_one_reference()->EVT_NAME()->getText())->second;
+		if(ctx->predicate()->SPARQL_QUERY() != NULL){
+				std::string query = ctx->predicate()->SPARQL_QUERY()->getText();
+				query.erase(0,1);//erase '['
+				query.erase(query.end()-1, query.end());//erase ']'
+				queries.push_back(std::make_tuple(eventType, ctx->predicate()->EVT_NAME()->getText(), query));
+				if(ctx->predicate()->event_alias() != NULL){
+					eventId_map.insert(std::pair<std::string, int>(ctx->predicate()->event_alias()->EVT_NAME()->getText(), eventType));
+				}
+			}
+			if(checkAllWithin(ctx)){
+				templateCE->isRuleAllWithin = true;
+			}
+			TimeMs time(stoi(ctx->neg_one_reference()->INT_VAL()->getText()));
+			rule->addPredicate(eventType, NULL, 0, predId-1, time, getCompKind(ctx));
+			predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
+			predicateCount++;
+	}else if(ctx->neg_between() != NULL){
+		int predId1 = predicatesIds.find(ctx->neg_between()->EVT_NAME(0)->getText())->second;
+		int predId2 = predicatesIds.find(ctx->neg_between()->EVT_NAME(1)->getText())->second;
+		if(ctx->predicate()->SPARQL_QUERY() != NULL){
+			std::string query = ctx->predicate()->SPARQL_QUERY()->getText();
+			query.erase(0,1);//erase '['
+			query.erase(query.end()-1, query.end());//erase ']'
+			queries.push_back(std::make_tuple(eventType, ctx->predicate()->EVT_NAME()->getText(), query));
+			if(ctx->predicate()->event_alias() != NULL){
+				eventId_map.insert(std::pair<std::string, int>(ctx->predicate()->event_alias()->EVT_NAME()->getText(), eventType));
+			}
 		}
-	}
-	if(checkAllWithin(ctx)){
+		if(checkAllWithin(ctx)){
 		templateCE->isRuleAllWithin = true;
+		}
+			TimeMs time = rule->getWinBetween(predId1, predId2);
+			rule->addPredicate(eventType, NULL, 0, predId1, time, getCompKind(ctx));
+			predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
+			predicateCount++;
 	}
-	TimeMs time(stoi(ctx->INT_VAL()->getText()));
-	rule->addPredicate(eventType, NULL, 0, predId-1, time, getCompKind(ctx));
-	predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
-	predicateCount++;
 }
 
 void RDFTRexRuleParser::enterNegative_predicate(RDFTESLAParser::Negative_predicateContext * ctx){
@@ -346,7 +368,7 @@ void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ct
 	unsigned int numParam = ctx->attr_definition().size();
 	for(unsigned int j = 0; j < numParam; j++){
 		char* name = new char[SIZE];//freed by TRex
-		ValType type;
+		ValType type = INT;
 		std::string string = ctx->attr_definition(j)->SPARQL_VAR()->getText();
 		std::string valtype = ctx->attr_definition(j)->VALTYPE()->getText();
 		strcpy(name, string.c_str());
@@ -392,7 +414,6 @@ void RDFTRexRuleParser::parse(std::string rule, RDFStore* store, TRexEngine* eng
 }
 
 //TODO aggiungere addparameternegation
-//TODO aggiungere between a and b per predicati (usando getWinbetween per ricavare il time span)
 
 
 

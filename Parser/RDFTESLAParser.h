@@ -303,8 +303,8 @@ public:
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *SEL_POLICY();
     PredicateContext *predicate();
-    antlr4::tree::TerminalNode *INT_VAL();
-    antlr4::tree::TerminalNode *EVT_NAME();
+    Neg_one_referenceContext *neg_one_reference();
+    Neg_betweenContext *neg_between();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;

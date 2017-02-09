@@ -41,6 +41,8 @@ RDFStore::~RDFStore(){
 	delete this->dlogRules;
 	delete[] this->prefixesArray;
 	for (std::map<int,RuleQuery*>::iterator query = this->queries.begin(); query != this->queries.end(); query++){	
+		delete query->second->queryName;
+		delete query->second->queryString;
 		delete query->second;
 	}
 }

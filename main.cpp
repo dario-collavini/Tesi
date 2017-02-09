@@ -62,7 +62,8 @@ int main(int argc, char* argv[])
 	std::ifstream regola("./teslardf_rule.txt");
 	std::stringstream buffer;
 	buffer << regola.rdbuf();
-	parser.parse(buffer.str(), store, e, constructor);
+	std::string str = buffer.str();
+	parser.parse(str, store, e, constructor);
 
 //Subscription
 	Constraint c[1];
