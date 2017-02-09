@@ -60,8 +60,9 @@ int main(int argc, char* argv[])
 //Parser
 	RDFTRexRuleParser parser;
 	std::ifstream regola("./teslardf_rule.txt");
-	std::string stringRule((std::istreambuf_iterator<char>(regola)), std::istreambuf_iterator<char>());
-	parser.parse(stringRule, store, e, constructor);
+	std::stringstream buffer;
+	buffer << regola.rdbuf();
+	parser.parse(buffer.str(), store, e, constructor);
 
 //Subscription
 	Constraint c[1];
