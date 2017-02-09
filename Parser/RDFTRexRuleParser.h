@@ -17,6 +17,7 @@
 
 class RDFTRexRuleParser : public RDFTESLABaseListener{
 public:
+
 	void enterEvent_declaration(RDFTESLAParser::Event_declarationContext* ctx);
 
 	void enterCe_definition(RDFTESLAParser::Ce_definitionContext * ctx);
@@ -33,7 +34,11 @@ public:
 
 	void enterConsuming(RDFTESLAParser::ConsumingContext * ctx);
 
-	void parse(std::string rule, RDFStore* rdfstore, TRexEngine* engine, RDFConstructor* constructor);
+	void parse(std::string rule, RDFStore* store, TRexEngine* engine, RDFConstructor* constructor);
+
+	RulePkt* getRule(){return rule;}
+	std::vector<std::tuple<int, std::string, std::string> > getQueries(){return queries;}
+	Template* getTemplateCE(){return templateCE;}
 
 private:
 	 std::map<std::string, int> eventId_map;
@@ -49,6 +54,4 @@ private:
 	 OpTree* recursivelyNavigateExpression(RDFTESLAParser::ExprContext* expr, OpTree* tree, ValType valType);
 
 };
-
-
 //TODO rifare file grammatica RDFTESLA.g4 con antlr(ci sono errori)

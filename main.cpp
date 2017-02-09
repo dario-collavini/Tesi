@@ -6,8 +6,11 @@
 #include "RDFStore/RDFStore.h"
 #include "RDFStore/EventConverter.h"
 #include "Parser/ParserEmulator.h"
+#include "Parser/RDFTRexRuleParser.h"
 #include "RDFConstructor/RDFConstructor.h"
 #include <vector>
+#include <fstream>
+#include <iostream>
 
 //For print purposes
 int a = 1;
@@ -57,15 +60,22 @@ int main(int argc, char* argv[])
 
 //Parser
 	//1)Rule parsing
-	ParserEmulator parser;
-	e->processRulePkt(parser.parseRule());
-
+	//ParserEmulator parser;
+	RDFTRexRuleParser parser;
+	//e->processRulePkt(parser.parseRule());
+	std::string regola = "Assign 1 => Movement, 2 => HighRadiation, 3 => Warning Define Warning := {a1:stanza a1:is ?room . a1:radiazioni a1:is ?value . }From Movement := [select ?room ?bool where{?sensor a1:senstipo a1:MovSens; a1:haslocation ?room; a1:value ?bool.}] and each HighRadiation := [select ?sensor ?room ?value where{?sensor a1:senstipo a1:RadSens; a1:haslocation ?room; a1:value ?value. FILTER(?value > 150)}] within 600000 from Movement With Movement.?room = HighRadiation.?room Where (string)?room := Movement.?room, (int)?value := HighRadiation.?value ;";
+	//std::ifstream infile;
+	//infile.open("/home/dario/Scrivania/teslardf_rule.txt");
+	//while(!infile.eof()){
+	//	getline(infile, regola);
+	//	std::cout << regola;
+	//}
 	//2)Query estratte da una regola RDFTesla
-	store->addQuery(parser.parseQueryType(1),parser.parseQueryName(1),parser.parseQueryString(1));
-	store->addQuery(parser.parseQueryType(2),parser.parseQueryName(2),parser.parseQueryString(2));
-
+	//store->addQuery(parser.parseQueryType(1),parser.parseQueryName(1),parser.parseQueryString(1));
+	//store->addQuery(parser.parseQueryType(2),parser.parseQueryName(2),parser.parseQueryString(2));
+	parser.parse(regola, store, e, constructor);
 	//3)Template evento complesso
-	constructor->addTemplate(3, parser.parseTemplateCE());
+	//constructor->addTemplate(3, parser.parseTemplateCE());
 
 //Subscription
 	Constraint c[1];

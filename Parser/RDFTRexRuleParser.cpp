@@ -29,7 +29,7 @@ AggregateFun getAggregateFun(std::string fun) {
 	if (fun.compare("COUNT") == 0) return COUNT;
 	if (fun.compare("MIN") == 0) 	 return MIN;
 	if (fun.compare("MAX") == 0) 	 return MAX;
-	else return NULL;
+	else return AVG;
 }
 
 Op getConstrOp(std::string source) {
@@ -39,7 +39,7 @@ Op getConstrOp(std::string source) {
 	if (source.compare("<=") == 0)	return LE;
 	if (source.compare(">=") == 0)	return GE;
 	if (source.compare("!=") == 0) 	return NE;
-	else return NULL;
+	else return EQ;
 }
 
 ValType getValType(std::string vtype) {
@@ -47,26 +47,26 @@ ValType getValType(std::string vtype) {
 	else if (vtype.compare("float") == 0)  return FLOAT;
 	else if (vtype.compare("bool") == 0) 	 return BOOL;
 	else if (vtype.compare("string") == 0) return STRING;
-	else return NULL;
+	else return INT;
 }
 
-Op getBinOp(std::string op) {
+OpTreeOperation getBinOp(std::string op) {
 	if (op.compare("+") == 0) return ADD;
 	else if (op.compare("-") == 0) return SUB;
 	else if (op.compare("/") == 0) return DIV;
 	else if (op.compare("*") == 0) return MUL;
 	else if (op.compare("&") == 0) return AND;
 	else if (op.compare("|") == 0) return OR;
-	else return NULL;
+	else return OR;
 }
 
 //Template memory freed by destructor of RDFConstructor
 void RDFTRexRuleParser::enterCe_definition(RDFTESLAParser::Ce_definitionContext * ctx){
 	int type = eventId_map.find(ctx->EVT_NAME()->getText())->second;
 	templateCE = new Template;
+	rule = new RulePkt(false);
 	templateCE->eventType = type;
 	templateCE->isRuleAllWithin = false;//change on the go...
-	rule = new RulePkt(false);//deleted later from TRexEngine
 	ceTRex = new CompositeEventTemplate(type);
 	rule->setCompositeEventTemplate(ceTRex);
 	RDFTESLAParser::Rdf_patternContext* pattern = ctx->rdf_pattern();
@@ -202,7 +202,9 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 					//remove quotes from the string
 					string.erase(0,1);//erase '"'
 					string.erase(string.end()-1, string.end());//erase '"'
-					value = new StaticValueReference(string);
+					char *s = new char[SIZE];
+					strcpy(s, string.c_str());
+					value = new StaticValueReference(s);
 					vtype = STRING;
 				}
 				return new OpTree(value, vtype);
@@ -230,9 +232,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 				for(unsigned int i = 0; i < agCtx->attr_constraint().size(); i++){
 					RDFTESLAParser::Attr_constraintContext* constr = agCtx->attr_constraint(i);
 					std::string nameString = constr->SPARQL_VAR()->getText();
-					char* name = new char[SIZE];
-					strcpy(name, nameString.c_str());
-					c[i].name = name+1;//+1 drops '?' or '$'
+					strcpy(c[i].name, nameString.c_str()+1);
 					if(constr->static_reference()->INT_VAL() != NULL){
 						c[i].type = INT;
 						c[i].op = getConstrOp(constr->OPERATOR()->getText());
@@ -261,7 +261,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 					char* name = new char[SIZE];
 					strcpy(name, nameString.c_str());
 					RulePktValueReference* sparqlValue = new RulePktValueReference(predId, name+1, STATE);
-					OpTree* varTree = new OpTree(sparqlValue, getConstrOp(constrParam->VALTYPE()->getText()));
+					OpTree* varTree = new OpTree(sparqlValue, getValType(constrParam->VALTYPE()->getText()));
 					if(constrParam->expr()->param_atom() != NULL){
 						 rule->addComplexParameter(getConstrOp(constrParam->OPERATOR()->getText()), getValType(constrParam->VALTYPE()->getText()) , varTree, buildOpTree(constrParam->expr(), getValType(constrParam->VALTYPE()->getText())));
 					}else if(constrParam->expr()->aggregate_atom() != NULL){
@@ -293,7 +293,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 			std::vector<RDFTESLAParser::ExprContext*> exprVector = expr->expr();
 			for(unsigned int m = 0; m < exprVector.size(); m++){
 				RDFTESLAParser::ExprContext* subExpr = expr->expr(m);
-				Op op;
+				OpTreeOperation op;
 				if(expr->BINOP_MUL() != NULL){
 					op = getBinOp(expr->BINOP_MUL()->getText());
 				}else if(expr->BINOP_ADD() != NULL){
@@ -367,11 +367,26 @@ void RDFTRexRuleParser::enterConsuming(RDFTESLAParser::ConsumingContext * ctx){
 	}
 }
 
-void RDFTRexRuleParser::parse(std::string rule, RDFStore* rdfstore, TRexEngine* engine, RDFConstructor* constructor){
-
+void RDFTRexRuleParser::parse(std::string rule, RDFStore* store, TRexEngine* engine, RDFConstructor* constructor){
+	antlr4::ANTLRInputStream input(rule);
+	RDFTESLALexer lexer(&input);
+	antlr4::CommonTokenStream tokens(&lexer);
+	RDFTESLAParser parser(&tokens);
+	antlr4::tree::ParseTree* tree = parser.trex_rdf_rule();
+	antlr4::tree::ParseTreeListener* listener(this);
+	antlr4::tree::ParseTreeWalker::DEFAULT.walk(listener, tree);
+	std::cout << "fine parsing \n";
+	for(unsigned int i = 0; i < queries.size(); i ++){
+			int type = (int)std::get<0>(queries[i]);
+			std::string name = std::get<1>(queries[i]);
+			std::string string = std::get<2>(queries[i]);
+			store->addQuery(type, name.c_str(), string.c_str());
+	}
+	constructor->addTemplate(templateCE->eventType, templateCE);
+	engine->processRulePkt(this->rule);
 }
 
-
+//TODO aggiungere addparameternegation
 //TODO aggiungere between a and b per predicati (usando getWinbetween per ricavare il time span)
 
 

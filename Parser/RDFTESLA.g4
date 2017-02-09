@@ -46,15 +46,17 @@ SPARQL_QUERY :   '['
             |   '\\'    {ss << '\\';}
             |   '\"'   {ss << '"';}
             )
-        |   ~('\\'|'"') {ss << ((char)_input->LA(-1));}
+        |    WS+ {ss << ' ';}
+        |   ~('\\'|']') {ss << ((char)_input->LA(-1));}
         )*
         ']'
         {str = ss.str();}
     ;
 EVT_NAME   : ('A' .. 'Z') (('A' .. 'Z') | ('a' .. 'z') | ('0' .. '9') | '_')*;
-URI_NAME       : ( 'a'..'z' | 'A'..'Z' | '0'..'9' | '@' | ':' | '%' | '_' | '\\' | '+' | '.' | '~' | '#' | '?' | '&' | '/' | '=' | '-' )+;
-SPARQL_VAR : ('?' | '$') (('A' .. 'Z') | ('a' .. 'z') | ('0' .. '9') | '_')*; 
-WS 	   : [ \t\r\n]+ -> skip ;
+URI_PREFIX_NAME   : [a-zA-Z0-9@%_\\+~#&/=-]+ [:] [a-zA-Z0-9@%_\\+~#&/=-]+ ;
+URI_FULL_NAME   : [<] [[a-zA-Z0-9@:%_\\+.~#&/=-]+ [>] ;
+SPARQL_VAR :  [?] [a-zA-Z0-9]+ ;
+WS : ( [ ]+ | [\t\r\n]+ ) -> skip ;
 
 static_reference : (INT_VAL | FLOAT_VAL | STRING_VAL | BOOL_VAL);
 packet_reference : (EVT_NAME '.' SPARQL_VAR);
@@ -78,14 +80,14 @@ pattern_predicate : positive_predicate | negative_predicate;
 event_declaration : INT_VAL '=>' EVT_NAME;
 event_declarations : event_declaration (',' event_declaration)*;
 parametrization : packet_reference '=' packet_reference (',' packet_reference '=' packet_reference)*;
-prefix_uri : URI_NAME ':' URI_NAME;
-full_uri : '<' URI_NAME '>';
+prefix_uri : URI_PREFIX_NAME ;
+full_uri : URI_FULL_NAME ;
 uri : prefix_uri | full_uri;  
 sub : uri | SPARQL_VAR;
 pred : uri | SPARQL_VAR; 
 obj : uri | SPARQL_VAR;
-triple : sub ' ' pred ' ' obj '.' ; 
-rdf_pattern : '[' (triple)* ']';
+triple : sub pred obj '.' ; 
+rdf_pattern : '{' (triple)* '}';
 ce_definition : EVT_NAME ':=' rdf_pattern ; 
 pattern : terminator (pattern_predicate)*;
 definitions : (staticAttr_definition | attr_definition) (',' (staticAttr_definition | attr_definition))*;
