@@ -5,7 +5,6 @@
 #include "TestRDFListener.h"
 #include "RDFStore/RDFStore.h"
 #include "RDFStore/EventConverter.h"
-#include "Parser/ParserEmulator.h"
 #include "Parser/RDFTRexRuleParser.h"
 #include "RDFConstructor/RDFConstructor.h"
 #include <vector>
@@ -53,29 +52,16 @@ int main(int argc, char* argv[])
 	//Subscription all' rdf constructor, che farà da intermediario tra Trex e il vero listener(client), per produrre il grafo rdf
 	e->addResultListener(constructor->getTRexListener());
 	
-/*Subscription: il client passa subscription e regole al server.
+/*Subscription: il client passa subscription e regole.
 *		Le subscription sono salvate nell'engine, mentre un parser traduce le regole in regole TRex ed estrae le query passandole
 *		a RDFox. Passa inoltre il template RDF dell'evento complesso a un componente RDF Constructor, incaricato di produrre l'evento RDF *		corrispondente quando viene generato il corrispondente CE Tesla da TRex.
 */
 
 //Parser
-	//1)Rule parsing
-	//ParserEmulator parser;
 	RDFTRexRuleParser parser;
-	//e->processRulePkt(parser.parseRule());
-	std::string regola = "Assign 1 => Movement, 2 => HighRadiation, 3 => Warning Define Warning := {a1:stanza a1:is ?room . a1:radiazioni a1:is ?value . }From Movement := [select ?room ?bool where{?sensor a1:senstipo a1:MovSens; a1:haslocation ?room; a1:value ?bool.}] and each HighRadiation := [select ?sensor ?room ?value where{?sensor a1:senstipo a1:RadSens; a1:haslocation ?room; a1:value ?value. FILTER(?value > 150)}] within 600000 from Movement With Movement.?room = HighRadiation.?room Where (string)?room := Movement.?room, (int)?value := HighRadiation.?value ;";
-	//std::ifstream infile;
-	//infile.open("/home/dario/Scrivania/teslardf_rule.txt");
-	//while(!infile.eof()){
-	//	getline(infile, regola);
-	//	std::cout << regola;
-	//}
-	//2)Query estratte da una regola RDFTesla
-	//store->addQuery(parser.parseQueryType(1),parser.parseQueryName(1),parser.parseQueryString(1));
-	//store->addQuery(parser.parseQueryType(2),parser.parseQueryName(2),parser.parseQueryString(2));
-	parser.parse(regola, store, e, constructor);
-	//3)Template evento complesso
-	//constructor->addTemplate(3, parser.parseTemplateCE());
+	std::ifstream regola("./teslardf_rule.txt");
+	std::string stringRule((std::istreambuf_iterator<char>(regola)), std::istreambuf_iterator<char>());
+	parser.parse(stringRule, store, e, constructor);
 
 //Subscription
 	Constraint c[1];

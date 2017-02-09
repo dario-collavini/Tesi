@@ -38,6 +38,8 @@ public:
 
 	int getPrefixesArrayLength(){return prefixesArrayLength;}
 
+	std::map<int, RuleQuery*> &getQueryMap(){return queries;}
+
 	/**
 	 * Processes incoming events, importing a new one and deleting the old one,
 	 * and evaluates stored queries after triple materialization.

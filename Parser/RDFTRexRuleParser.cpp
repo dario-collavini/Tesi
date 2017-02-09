@@ -345,7 +345,7 @@ void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ct
 	//PARAMS/AGGREGATES
 	unsigned int numParam = ctx->attr_definition().size();
 	for(unsigned int j = 0; j < numParam; j++){
-		char* name = new char[SIZE];
+		char* name = new char[SIZE];//freed by TRex
 		ValType type;
 		std::string string = ctx->attr_definition(j)->SPARQL_VAR()->getText();
 		std::string valtype = ctx->attr_definition(j)->VALTYPE()->getText();
@@ -375,12 +375,17 @@ void RDFTRexRuleParser::parse(std::string rule, RDFStore* store, TRexEngine* eng
 	antlr4::tree::ParseTree* tree = parser.trex_rdf_rule();
 	antlr4::tree::ParseTreeListener* listener(this);
 	antlr4::tree::ParseTreeWalker::DEFAULT.walk(listener, tree);
-	std::cout << "fine parsing \n";
 	for(unsigned int i = 0; i < queries.size(); i ++){
 			int type = (int)std::get<0>(queries[i]);
 			std::string name = std::get<1>(queries[i]);
 			std::string string = std::get<2>(queries[i]);
-			store->addQuery(type, name.c_str(), string.c_str());
+			int nameLen = name.size();
+			int stringLen = string.size();
+			char* cname = new char[nameLen]; //freed by RDFStore
+			char*	cstring = new char[stringLen];//freed by RDFStore
+			strcpy(cname, name.c_str());
+			strcpy(cstring, string.c_str());
+			store->addQuery(type, cname, cstring);
 	}
 	constructor->addTemplate(templateCE->eventType, templateCE);
 	engine->processRulePkt(this->rule);
