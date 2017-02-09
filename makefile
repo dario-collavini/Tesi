@@ -46,7 +46,7 @@ all: RDFTRex
 RDFTRex: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -L/home/dario/RDFox/lib -o "RDFTRex" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -L"/home/dario/Scrivania/EclipseRDFTRex/RDFTRex/lib/antlr" -o "RDFTRex" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

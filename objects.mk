@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -lCppRDFox -lTRex2
+LIBS := -lCppRDFox -lantlr4-runtime -lTRex2
 
