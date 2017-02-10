@@ -26,14 +26,14 @@ CompKind getCompKind(RDFTESLAParser::Positive_predicateContext* ctx) {
 AggregateFun getAggregateFun(std::string fun) {
 	if (fun.compare("AVG") == 0) 	 return AVG;
 	if (fun.compare("SUM") == 0) 	 return SUM;
-	if (fun.compare("COUNT") == 0) return COUNT;
+	if (fun.compare("COUNT") == 0) 	 return COUNT;
 	if (fun.compare("MIN") == 0) 	 return MIN;
 	if (fun.compare("MAX") == 0) 	 return MAX;
 	else return AVG;
 }
 
 Op getConstrOp(std::string source) {
-	if(source.compare("0") == 0)		return EQ;
+	if(source.compare("0") == 0)	return EQ;
 	if (source.compare(">") == 0)	return GT;
 	if (source.compare("<") == 0)	return LT;
 	if (source.compare("<=") == 0)	return LE;
@@ -43,15 +43,15 @@ Op getConstrOp(std::string source) {
 }
 
 ValType getValType(std::string vtype) {
-	if (vtype.compare("int") == 0) 		 return INT;
-	else if (vtype.compare("float") == 0)  return FLOAT;
-	else if (vtype.compare("bool") == 0) 	 return BOOL;
-	else if (vtype.compare("string") == 0) return STRING;
+	if (vtype.compare("int") == 0) 		 	return INT;
+	else if (vtype.compare("float") == 0)   return FLOAT;
+	else if (vtype.compare("bool") == 0) 	return BOOL;
+	else if (vtype.compare("string") == 0)  return STRING;
 	else return INT;
 }
 
 OpTreeOperation getBinOp(std::string op) {
-	if (op.compare("+") == 0) return ADD;
+	if (op.compare("+") == 0) 	   return ADD;
 	else if (op.compare("-") == 0) return SUB;
 	else if (op.compare("/") == 0) return DIV;
 	else if (op.compare("*") == 0) return MUL;
@@ -60,14 +60,13 @@ OpTreeOperation getBinOp(std::string op) {
 	else return OR;
 }
 
-//Template memory freed by destructor of RDFConstructor
 void RDFTRexRuleParser::enterCe_definition(RDFTESLAParser::Ce_definitionContext * ctx){
 	int type = eventId_map.find(ctx->EVT_NAME()->getText())->second;
-	templateCE = new Template;
-	rule = new RulePkt(false);
+	templateCE = new Template;//freed by RDFConstructor
+	rule = new RulePkt(false);//freed later by TRex
 	templateCE->eventType = type;
-	templateCE->isRuleAllWithin = false;//change on the go...
-	ceTRex = new CompositeEventTemplate(type);
+	templateCE->isRuleAllWithin = false;//change on the go if "all" is find
+	ceTRex = new CompositeEventTemplate(type);//freed by TRex?
 	rule->setCompositeEventTemplate(ceTRex);
 	RDFTESLAParser::Rdf_patternContext* pattern = ctx->rdf_pattern();
 	std::vector<RDFTESLAParser::TripleContext*> tripleList = pattern->triple();
@@ -81,14 +80,14 @@ void RDFTRexRuleParser::enterCe_definition(RDFTESLAParser::Ce_definitionContext 
 		}else if(subject->SPARQL_VAR()!= NULL){//it is a var
 			t.subject = std::make_pair(IS_VAR, subject->SPARQL_VAR()->getText());
 		}
-		if(predicate->uri() != NULL){//it is not a var, just copy the uri
+		if(predicate->uri() != NULL){
 			t.predicate = std::make_pair(IS_NOT_VAR, predicate->uri()->getText());
-		}else if(predicate->SPARQL_VAR()!= NULL){//it is a var
+		}else if(predicate->SPARQL_VAR()!= NULL){
 			t.predicate = std::make_pair(IS_VAR, predicate->SPARQL_VAR()->getText());
 		}
-		if(object->uri() != NULL){//it is not a var, just copy the uri
+		if(object->uri() != NULL){
 			t.object = std::make_pair(IS_NOT_VAR, object->uri()->getText());
-		}else if(object->SPARQL_VAR()!= NULL){//it is a var
+		}else if(object->SPARQL_VAR()!= NULL){
 			t.object = std::make_pair(IS_VAR, object->SPARQL_VAR()->getText());
 		}
 		templateCE->triples.push_back(t);
@@ -117,21 +116,21 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 	if(ctx->neg_one_reference() != NULL){
 		int predId = predicatesIds.find(ctx->neg_one_reference()->EVT_NAME()->getText())->second;
 		if(ctx->predicate()->SPARQL_QUERY() != NULL){
-				std::string query = ctx->predicate()->SPARQL_QUERY()->getText();
-				query.erase(0,1);//erase '['
-				query.erase(query.end()-1, query.end());//erase ']'
-				queries.push_back(std::make_tuple(eventType, ctx->predicate()->EVT_NAME()->getText(), query));
-				if(ctx->predicate()->event_alias() != NULL){
-					eventId_map.insert(std::pair<std::string, int>(ctx->predicate()->event_alias()->EVT_NAME()->getText(), eventType));
-				}
+			std::string query = ctx->predicate()->SPARQL_QUERY()->getText();
+			query.erase(0,1);//erase '['
+			query.erase(query.end()-1, query.end());//erase ']'
+			queries.push_back(std::make_tuple(eventType, ctx->predicate()->EVT_NAME()->getText(), query));
+			if(ctx->predicate()->event_alias() != NULL){
+				eventId_map.insert(std::pair<std::string, int>(ctx->predicate()->event_alias()->EVT_NAME()->getText(), eventType));
 			}
-			if(checkAllWithin(ctx)){
-				templateCE->isRuleAllWithin = true;
-			}
-			TimeMs time(stoi(ctx->neg_one_reference()->INT_VAL()->getText()));
-			rule->addPredicate(eventType, NULL, 0, predId-1, time, getCompKind(ctx));
-			predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
-			predicateCount++;
+		}
+		if(checkAllWithin(ctx)){
+			templateCE->isRuleAllWithin = true;
+		}
+		TimeMs time(stoi(ctx->neg_one_reference()->INT_VAL()->getText()));
+		rule->addPredicate(eventType, NULL, 0, predId-1, time, getCompKind(ctx));
+		predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
+		predicateCount++;
 	}else if(ctx->neg_between() != NULL){
 		int predId1 = predicatesIds.find(ctx->neg_between()->EVT_NAME(0)->getText())->second;
 		int predId2 = predicatesIds.find(ctx->neg_between()->EVT_NAME(1)->getText())->second;
@@ -147,10 +146,10 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 		if(checkAllWithin(ctx)){
 		templateCE->isRuleAllWithin = true;
 		}
-			TimeMs time = rule->getWinBetween(predId1, predId2);
-			rule->addPredicate(eventType, NULL, 0, predId1, time, getCompKind(ctx));
-			predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
-			predicateCount++;
+		TimeMs time = rule->getWinBetween(predId1, predId2);
+		rule->addPredicate(eventType, NULL, 0, predId1, time, getCompKind(ctx));
+		predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
+		predicateCount++;
 	}
 }
 
@@ -185,15 +184,16 @@ void RDFTRexRuleParser::enterParametrization(RDFTESLAParser::ParametrizationCont
 		int predId2 = predicatesIds.find(ctx->packet_reference(i+1)->EVT_NAME()->getText())->second;
 		std::string var1 = ctx->packet_reference(i)->SPARQL_VAR()->getText();
 		std::string var2 = ctx->packet_reference(i+1)->SPARQL_VAR()->getText();
-		char* v1 = new char[SIZE];//freed by TRex?
+		char* v1 = new char[SIZE];
 		char* v2 = new char[SIZE];
 		strcpy(v1, var1.c_str());
 		strcpy(v2, var2.c_str());
+		//TODO aggiungere addparameternegation
 		rule->addParameterBetweenStates(predId1, v1+1, predId2, v2+1);//+1 drops the '?' or '$'
+		delete v1;
+		delete v2;
 	}
 }
-
-
 
 OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprContext* expr, OpTree* tree, ValType valType) {
 		if (expr->param_atom() != NULL) {
@@ -204,7 +204,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 			if (ctxParam->static_reference() != NULL) {
 				if (ctxParam->static_reference()->INT_VAL() != NULL) {
 					int val = stoi(ctxParam->static_reference()->INT_VAL()->getText());
-					value = new StaticValueReference(val);
+					value = new StaticValueReference(val);//freed by TRex?
 					vtype = INT;
 				}
 				else if (ctxParam->static_reference()->FLOAT_VAL() != NULL) {
@@ -228,8 +228,9 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 					strcpy(s, string.c_str());
 					value = new StaticValueReference(s);
 					vtype = STRING;
+					delete s;
 				}
-				return new OpTree(value, vtype);
+				return new OpTree(value, vtype);//TODO value is freed?
 			}
 			else if (ctxParam->packet_reference()!=NULL) {
 				//this is a reference to an attribute from another query
@@ -240,6 +241,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 				char* name = new char[SIZE];
 				strcpy(name, varName.c_str());
 				RulePktValueReference* ref = new RulePktValueReference(predId, name+1 , STATE);//+1 drops '?' or '$'
+				delete name;
 				return new OpTree(ref, valType);
 			}
 		}
@@ -289,6 +291,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 					}else if(constrParam->expr()->aggregate_atom() != NULL){
 						rule->addComplexParameterForAggregate(getConstrOp(constrParam->OPERATOR()->getText()), getValType(constrParam->VALTYPE()->getText()), varTree, buildOpTree(constrParam->expr(), getValType(constrParam->VALTYPE()->getText())));
 					}
+					delete name;
 				}
 				std::string predName = agCtx->packet_reference()->EVT_NAME()->getText();
 				std::string attrName = agCtx->packet_reference()->SPARQL_VAR()->getText();
@@ -307,6 +310,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 					aggregateCount++;
 				}
 				RulePktValueReference* ref  = new RulePktValueReference(aggregateCount-1);
+				delete name;
 				return new OpTree(ref, valType);
 			}
 		}
@@ -367,7 +371,7 @@ void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ct
 	//PARAMS/AGGREGATES
 	unsigned int numParam = ctx->attr_definition().size();
 	for(unsigned int j = 0; j < numParam; j++){
-		char* name = new char[SIZE];//freed by TRex
+		char* name = new char[SIZE];
 		ValType type = INT;
 		std::string string = ctx->attr_definition(j)->SPARQL_VAR()->getText();
 		std::string valtype = ctx->attr_definition(j)->VALTYPE()->getText();
@@ -378,8 +382,8 @@ void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ct
 		else if(valtype.compare("bool") == 0) type = BOOL;
 		OpTree* tree = buildOpTree(ctx->attr_definition(j)->expr(), type);
 		ceTRex->addAttribute(name+1, tree);//+1 drops '?' or '$'
+		delete name;
 	}
-
 }
 
 void RDFTRexRuleParser::enterConsuming(RDFTESLAParser::ConsumingContext * ctx){
@@ -412,15 +416,3 @@ void RDFTRexRuleParser::parse(std::string rule, RDFStore* store, TRexEngine* eng
 	constructor->addTemplate(templateCE->eventType, templateCE);
 	engine->processRulePkt(this->rule);
 }
-
-//TODO aggiungere addparameternegation
-
-
-
-
-
-
-
-
-
-

@@ -52,5 +52,4 @@ private:
 
 	 OpTree* buildOpTree(RDFTESLAParser::ExprContext* expr, ValType valType);
 	 OpTree* recursivelyNavigateExpression(RDFTESLAParser::ExprContext* expr, OpTree* tree, ValType valType);
-
 };
