@@ -66,7 +66,7 @@ void RDFTRexRuleParser::enterCe_definition(RDFTESLAParser::Ce_definitionContext 
 	rule = new RulePkt(false);//freed later by TRex
 	templateCE->eventType = type;
 	templateCE->isRuleAllWithin = false;//change on the go if "all" is find
-	ceTRex = new CompositeEventTemplate(type);//freed by TRex?
+	ceTRex = new CompositeEventTemplate(type);//freed by TRex
 	rule->setCompositeEventTemplate(ceTRex);
 	RDFTESLAParser::Rdf_patternContext* pattern = ctx->rdf_pattern();
 	std::vector<RDFTESLAParser::TripleContext*> tripleList = pattern->triple();
@@ -146,8 +146,8 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 		if(checkAllWithin(ctx)){
 		templateCE->isRuleAllWithin = true;
 		}
-		TimeMs time = rule->getWinBetween(predId1, predId2);
-		rule->addPredicate(eventType, NULL, 0, predId1, time, getCompKind(ctx));
+		TimeMs time = rule->getWinBetween(predId1-1, predId2-1);
+		rule->addPredicate(eventType, NULL, 0, predId1-1, time, getCompKind(ctx));
 		predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
 		predicateCount++;
 	}
@@ -235,7 +235,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 			else if (ctxParam->packet_reference()!=NULL) {
 				//this is a reference to an attribute from another query
 				RDFTESLAParser::Packet_referenceContext* pkt_ctx = ctxParam->packet_reference();
-				//I need to figure out the idx of the event in the sequence; it's not an aggregate; attr_name
+				//I need to figure out the idx of the event in the sequence; it's not an aggregate
 				int predId = predicatesIds.find(pkt_ctx->EVT_NAME()->getText())->second;
 				std::string varName = pkt_ctx->SPARQL_VAR()->getText();
 				char* name = new char[SIZE];
@@ -251,7 +251,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 			AggregateFun fun = getAggregateFun(agCtx->AGGR_FUN()->getText());
 			int predId = predicatesIds.find(agCtx->packet_reference()->EVT_NAME()->getText())->second;
 			if (agCtx->packet_reference() != NULL) {
-				int constrLen = agCtx->attr_constraint().size() + agCtx->attr_parameter().size();
+				int constrLen = agCtx->attr_constraint().size();
 				Constraint* c = new Constraint[constrLen];
 				for(unsigned int i = 0; i < agCtx->attr_constraint().size(); i++){
 					RDFTESLAParser::Attr_constraintContext* constr = agCtx->attr_constraint(i);
@@ -303,7 +303,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 					int predId = predicatesIds.find(agCtx->agg_one_reference()->EVT_NAME()->getText())->second;
 					rule->addTimeBasedAggregate(type, c, constrLen, predId, time, name+1, fun);
 					aggregateCount++;
-				}else if(agCtx->agg_between() != NULL){
+				}else if(agCtx->agg_between() != NULL){//TODO funziona il singolo ma non il between...
 					int predId1 = predicatesIds.find(agCtx->agg_between()->EVT_NAME(0)->getText())->second;
 					int predId2 = predicatesIds.find(agCtx->agg_between()->EVT_NAME(1)->getText())->second;
 					rule->addAggregateBetweenStates(type, c, constrLen, predId1, predId2, name+1, fun);
@@ -372,7 +372,7 @@ void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ct
 	unsigned int numParam = ctx->attr_definition().size();
 	for(unsigned int j = 0; j < numParam; j++){
 		char* name = new char[SIZE];
-		ValType type = INT;
+		ValType type;
 		std::string string = ctx->attr_definition(j)->SPARQL_VAR()->getText();
 		std::string valtype = ctx->attr_definition(j)->VALTYPE()->getText();
 		strcpy(name, string.c_str());

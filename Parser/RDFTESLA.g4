@@ -46,7 +46,7 @@ SPARQL_QUERY :   '['
             |   '\\'    {ss << '\\';}
             |   '\"'   {ss << '"';}
             )
-        |    WS+ {ss << ' ';}
+        |    [ ]+ {ss << ' ';}
         |   ~('\\'|']') {ss << ((char)_input->LA(-1));}
         )*
         ']'
@@ -86,7 +86,7 @@ uri : prefix_uri | full_uri;
 sub : uri | SPARQL_VAR;
 pred : uri | SPARQL_VAR; 
 obj : uri | SPARQL_VAR;
-triple : sub pred obj '.' ; 
+triple : sub (WS)* pred (WS)* obj (WS)* '.' ; 
 rdf_pattern : '{' (triple)* '}';
 ce_definition : EVT_NAME ':=' rdf_pattern ; 
 pattern : terminator (pattern_predicate)*;
