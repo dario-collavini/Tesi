@@ -14,11 +14,11 @@ public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
-    T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, ASSIGN = 19, DEFINE = 20, 
-    FROM = 21, WITH = 22, WHERE = 23, CONSUMING = 24, VALTYPE = 25, SEL_POLICY = 26, 
-    AGGR_FUN = 27, OPERATOR = 28, BINOP_MUL = 29, BINOP_ADD = 30, INT_VAL = 31, 
-    FLOAT_VAL = 32, BOOL_VAL = 33, STRING_VAL = 34, SPARQL_QUERY = 35, EVT_NAME = 36, 
-    URI_PREFIX_NAME = 37, URI_FULL_NAME = 38, SPARQL_VAR = 39, WS = 40
+    T__14 = 15, T__15 = 16, ASSIGN = 17, DEFINE = 18, FROM = 19, WITH = 20, 
+    WHERE = 21, CONSUMING = 22, VALTYPE = 23, SEL_POLICY = 24, AGGR_FUN = 25, 
+    OPERATOR = 26, BINOP_MUL = 27, BINOP_ADD = 28, INT_VAL = 29, FLOAT_VAL = 30, 
+    BOOL_VAL = 31, STRING_VAL = 32, SPARQL_QUERY = 33, EVT_NAME = 34, URI_PREFIX_NAME = 35, 
+    URI_FULL_NAME = 36, SPARQL_VAR = 37, WS = 38
   };
 
   enum {

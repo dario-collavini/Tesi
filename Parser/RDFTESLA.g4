@@ -68,7 +68,7 @@ expr: expr BINOP_MUL expr | expr BINOP_ADD expr | '(' expr ')' | (param_atom | a
 staticAttr_definition: SPARQL_VAR ':=' static_reference;
 attr_definition: '(' VALTYPE ')' SPARQL_VAR ':=' expr;
 attr_constraint: SPARQL_VAR OPERATOR static_reference;
-attr_parameter: '[' VALTYPE ']' SPARQL_VAR OPERATOR expr;
+attr_parameter: '(' VALTYPE ')' SPARQL_VAR OPERATOR expr;
 predicate : EVT_NAME (':=' SPARQL_QUERY event_alias?)? ;
 event_alias : 'as' EVT_NAME;
 terminator : predicate;

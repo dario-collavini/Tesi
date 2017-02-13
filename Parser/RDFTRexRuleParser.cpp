@@ -279,12 +279,12 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 						strcpy(c[i].stringVal, string.c_str());
 					}
 				}
-				for(unsigned int j = 0; j < agCtx->attr_parameter().size(); j++){
+				for(unsigned int j = 0; j < agCtx->attr_parameter().size(); j++){//TODO errore qui
 					RDFTESLAParser::Attr_parameterContext* constrParam = agCtx->attr_parameter(j);
 					std::string nameString = constrParam->SPARQL_VAR()->getText();
 					char* name = new char[SIZE];
 					strcpy(name, nameString.c_str());
-					RulePktValueReference* sparqlValue = new RulePktValueReference(predId, name+1, STATE);
+					RulePktValueReference* sparqlValue = new RulePktValueReference(predId, name+1, STATE);//FIXME
 					OpTree* varTree = new OpTree(sparqlValue, getValType(constrParam->VALTYPE()->getText()));
 					if(constrParam->expr()->param_atom() != NULL){
 						 rule->addComplexParameter(getConstrOp(constrParam->OPERATOR()->getText()), getValType(constrParam->VALTYPE()->getText()) , varTree, buildOpTree(constrParam->expr(), getValType(constrParam->VALTYPE()->getText())));
