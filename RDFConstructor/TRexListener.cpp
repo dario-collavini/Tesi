@@ -72,9 +72,59 @@ RDFEvent* createRDF(PubPkt* pkt, Template* templateCE){
 //Called just for ALL_WITHIN rules
 std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOfGroupEvents, std::map<int, Template*> templates){
 	std::vector<RDFEvent*> results;
+	/*std::map<int, std::vector<PubPkt*> > pubPktMapVector;
+	int index = 0;*/
 	for(std::map<int, std::vector<PubPkt*> >::iterator it = typesOfGroupEvents.begin(); it != typesOfGroupEvents.end(); it++){
 		std::vector<PubPkt*> pubPktVector = it->second;
 		Template* templateCE = templates.find(it->first)->second;
+		/*std::set<std::string> supportVars;
+		std::map<int, int> supportValuesI;
+		std::map<float, int> supportValuesF;
+		std::map<bool, int> supportValuesB;
+		std::map<std::string, int> supportValuesS;
+		for(std::vector<int>::iterator num = templateCE->typesOfEachAllEvent.begin(); num != templateCE->typesOfEachAllEvent.end(); num++){
+			for(std::vector<TripleTemplate>::iterator triple = templateCE->triples.begin(); triple != templateCE->triples.end(); triple++){
+				if(std::get<2>(triple->subject) == *num){
+					supportVars.insert(std::get<1>(triple->subject));
+				}
+				if(std::get<2>(triple->predicate) == *num){
+					supportVars.insert(std::get<1>(triple->predicate));
+				}
+				if(std::get<2>(triple->object) == *num){
+					supportVars.insert(std::get<1>(triple->object));
+				}
+			}
+		}
+		//smisto pacchetti in vettori in base ai valori delle vars in supportVars
+		for(std::vector<PubPkt*>::iterator pubPkt = pubPktVector.begin(); pubPkt != pubPktVector.end(); pubPkt++){
+			for(std::vector<std::string>::iterator var = supportVars.begin(); var != supportVars.end();var++){
+				int index;
+				ValType valtype;
+				char* name = new char[LEN];
+				strcpy(name, (*var).c_str());
+				(*pubPkt)->getAttributeIndexAndType(name+1, index, valtype);//+1 drops '?' or '$'
+				switch(valtype){
+				case INT:
+					int iValue = (*pubPkt)->getIntAttributeVal(index);
+					if(supportValuesI.find(iValue) != supportValuesI.end()){//esiste già un vettore con quel valore
+
+					}else{//creo vettore
+						std::vector<>
+					}
+					break;
+				case FLOAT:
+					float fValue = (*pubPkt)->getFloatAttributeVal(index);
+					break;
+				case BOOL:
+					int bValue = (*pubPkt)->getBoolAttributeVal(index);
+					break;
+				case BOOL:
+					char* string = new char[LEN];
+					(*pubPkt)->getStringAttributeVal(index, string);
+					break;
+				}
+			}
+		}*/
 		unsigned int numOfTriples = templateCE->triples.size();
 		unsigned int numOfPkt =  pubPktVector.size();
 		RDFEvent* event = new RDFEvent;

@@ -170,7 +170,7 @@ std::vector<Event*> RDFStore::evaluateSingleQuery(RuleQuery* q){
 			//double call, otherwise resBuffer is not properly filled (RDFox bug?)
 			RDFoxDataStoreTupleIterator_GetResource(*queryIterator, resourceIDs[j], datatypeID, resBuffer, bufferLength);
 			RDFoxDataStoreTupleIterator_GetResource(*queryIterator, resourceIDs[j], datatypeID, resBuffer, bufferLength);
-			strcpy(tempRes->lexicalForm, this->resBuffer);	
+			strcpy(tempRes->lexicalForm, this->resBuffer);
 			tempRes->datatypeID = *(this->datatypeID);
 			tempEvent->attributes.insert(std::pair<std::string, Resource*>(q->vars[j],tempRes));
 		}

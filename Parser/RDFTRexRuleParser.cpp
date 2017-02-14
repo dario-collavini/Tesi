@@ -114,7 +114,9 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 	int eventType = eventId_map.find(ctx->predicate()->EVT_NAME()->getText())->second;
 	//TODOdifferenziare within e between
 	if(ctx->neg_one_reference() != NULL){
-		int predId = predicatesIds.find(ctx->neg_one_reference()->EVT_NAME()->getText())->second;
+		std::string refEvent = ctx->neg_one_reference()->EVT_NAME()->getText();
+		int predId = predicatesIds.find(refEvent)->second;
+		CompKind comp = getCompKind(ctx);
 		if(ctx->predicate()->SPARQL_QUERY() != NULL){
 			std::string query = ctx->predicate()->SPARQL_QUERY()->getText();
 			query.erase(0,1);//erase '['
@@ -126,9 +128,14 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 		}
 		if(checkAllWithin(ctx)){
 			templateCE->isRuleAllWithin = true;
+			/*if(eventCompositions.find(refEvent)->second == EACH_WITHIN){//rule is all within x from (event of type each)
+				int typeOfRefEvent = eventId_map.find(refEvent)->second;
+				templateCE->typesOfEachAllEvent.push_back(typeOfRefEvent);
+			}*/
 		}
 		TimeMs time(stoi(ctx->neg_one_reference()->INT_VAL()->getText()));
-		rule->addPredicate(eventType, NULL, 0, predId-1, time, getCompKind(ctx));
+		rule->addPredicate(eventType, NULL, 0, predId, time, comp);
+		eventCompositions.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), comp));
 		predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
 		predicateCount++;
 	}else if(ctx->neg_between() != NULL){
@@ -146,8 +153,9 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 		if(checkAllWithin(ctx)){
 		templateCE->isRuleAllWithin = true;
 		}
-		TimeMs time = rule->getWinBetween(predId1-1, predId2-1);
-		rule->addPredicate(eventType, NULL, 0, predId1-1, time, getCompKind(ctx));
+		TimeMs time = rule->getWinBetween(predId1, predId2);
+		rule->addPredicate(eventType, NULL, 0, predId1, time, getCompKind(ctx));
+		eventCompositions.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), getCompKind(ctx)));
 		predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
 		predicateCount++;
 	}
@@ -230,7 +238,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 					vtype = STRING;
 					delete s;
 				}
-				return new OpTree(value, vtype);//TODO value is freed?
+				return new OpTree(value, vtype);//FIXME value is freed?
 			}
 			else if (ctxParam->packet_reference()!=NULL) {
 				//this is a reference to an attribute from another query
@@ -279,17 +287,19 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 						strcpy(c[i].stringVal, string.c_str());
 					}
 				}
-				for(unsigned int j = 0; j < agCtx->attr_parameter().size(); j++){//TODO errore qui
+				for(unsigned int j = 0; j < agCtx->attr_parameter().size(); j++){//this is added for completeness, but should not be used inside rules
 					RDFTESLAParser::Attr_parameterContext* constrParam = agCtx->attr_parameter(j);
 					std::string nameString = constrParam->SPARQL_VAR()->getText();
 					char* name = new char[SIZE];
 					strcpy(name, nameString.c_str());
-					RulePktValueReference* sparqlValue = new RulePktValueReference(predId, name+1, STATE);//FIXME
+					RulePktValueReference* sparqlValue = new RulePktValueReference(predId, name+1, STATE);
 					OpTree* varTree = new OpTree(sparqlValue, getValType(constrParam->VALTYPE()->getText()));
 					if(constrParam->expr()->param_atom() != NULL){
 						 rule->addComplexParameter(getConstrOp(constrParam->OPERATOR()->getText()), getValType(constrParam->VALTYPE()->getText()) , varTree, buildOpTree(constrParam->expr(), getValType(constrParam->VALTYPE()->getText())));
 					}else if(constrParam->expr()->aggregate_atom() != NULL){
 						rule->addComplexParameterForAggregate(getConstrOp(constrParam->OPERATOR()->getText()), getValType(constrParam->VALTYPE()->getText()), varTree, buildOpTree(constrParam->expr(), getValType(constrParam->VALTYPE()->getText())));
+					}else{//this is an expr
+						//FIXME add case if possible
 					}
 					delete name;
 				}
@@ -302,14 +312,13 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 					TimeMs time(stoi(agCtx->agg_one_reference()->INT_VAL()->getText()));
 					int predId = predicatesIds.find(agCtx->agg_one_reference()->EVT_NAME()->getText())->second;
 					rule->addTimeBasedAggregate(type, c, constrLen, predId, time, name+1, fun);
-					aggregateCount++;
-				}else if(agCtx->agg_between() != NULL){//TODO funziona il singolo ma non il between...
+				}else if(agCtx->agg_between() != NULL){
 					int predId1 = predicatesIds.find(agCtx->agg_between()->EVT_NAME(0)->getText())->second;
 					int predId2 = predicatesIds.find(agCtx->agg_between()->EVT_NAME(1)->getText())->second;
 					rule->addAggregateBetweenStates(type, c, constrLen, predId1, predId2, name+1, fun);
-					aggregateCount++;
 				}
-				RulePktValueReference* ref  = new RulePktValueReference(aggregateCount-1);
+				RulePktValueReference* ref  = new RulePktValueReference(aggregateCount);
+				aggregateCount++;
 				delete name;
 				return new OpTree(ref, valType);
 			}
@@ -326,7 +335,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 					op = getBinOp(expr->BINOP_ADD()->getText());
 				}
 				if(tree != NULL){
-					tree = new OpTree(tree, recursivelyNavigateExpression(subExpr, tree, valType), op, INT);
+					tree = new OpTree(tree, recursivelyNavigateExpression(subExpr, tree, valType), op, valType);
 				}else{
 					tree = recursivelyNavigateExpression(subExpr, tree, valType);
 				}
@@ -373,9 +382,9 @@ void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ct
 	for(unsigned int j = 0; j < numParam; j++){
 		char* name = new char[SIZE];
 		ValType type;
-		std::string string = ctx->attr_definition(j)->SPARQL_VAR()->getText();
+		std::string stringVar = ctx->attr_definition(j)->SPARQL_VAR()->getText();
 		std::string valtype = ctx->attr_definition(j)->VALTYPE()->getText();
-		strcpy(name, string.c_str());
+		strcpy(name, stringVar.c_str());
 		if(valtype.compare("string") == 0) type = STRING;
 		else if(valtype.compare("int") == 0) type = INT;
 		else if(valtype.compare("float") == 0) type = FLOAT;
