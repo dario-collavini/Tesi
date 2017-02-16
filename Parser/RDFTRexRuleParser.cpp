@@ -68,7 +68,6 @@ void RDFTRexRuleParser::enterCe_definition(RDFTESLAParser::Ce_definitionContext 
 	templateCE->eventType = type;
 	templateCE->isRuleAllWithin = false;//change on the go if "all" is find
 	templateCE->isRuleEachAllWithin = false;
-	templateCE->allRuleInfos->allEventCount = 0;//init
 	ceTRex = new CompositeEventTemplate(type);//freed by TRex
 	rule->setCompositeEventTemplate(ceTRex);
 	RDFTESLAParser::Rdf_patternContext* pattern = ctx->rdf_pattern();
@@ -136,11 +135,11 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 			templateCE->isRuleAllWithin = true;
 			templateCE->allRuleInfos->typeEventAll = eventType;
 			templateCE->allRuleInfos->window = rule->getWinBetween(0, predicateCount);//0=root
-			if(eventCompositions.find(refEvent)->second == EACH_WITHIN){//rule is all within x from (event of type each)
+			if(eventCompositions.find(refEvent)!=eventCompositions.end() && eventCompositions.find(refEvent)->second.compare("each") == 0){//rule is all within x from (event of type each)
 				templateCE->isRuleEachAllWithin = true;
 			}
 		}
-		eventCompositions.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), comp));
+		eventCompositions.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), ctx->SEL_POLICY()->getText()));
 		predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
 		predicateCount++;
 	}else if(ctx->neg_between() != NULL){
@@ -160,7 +159,7 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 		}
 		TimeMs time = rule->getWinBetween(predId1, predId2);
 		rule->addPredicate(eventType, NULL, 0, predId1, time, getCompKind(ctx));
-		eventCompositions.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), getCompKind(ctx)));
+		eventCompositions.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), ctx->SEL_POLICY()->getText()));
 		predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
 		predicateCount++;
 	}
@@ -419,8 +418,6 @@ void RDFTRexRuleParser::parse(std::string rule, RDFStore* store, TRexEngine* eng
 			int type = (int)std::get<0>(queries[i]);
 			std::string name = std::get<1>(queries[i]);
 			std::string string = std::get<2>(queries[i]);
-			int nameLen = name.size();
-			int stringLen = string.size();
 			store->addQuery(type, name, string);
 	}
 	constructor->addTemplate(templateCE->eventType, templateCE);

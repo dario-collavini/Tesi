@@ -43,7 +43,7 @@ public:
 private:
 	 std::map<std::string, int> eventId_map;
 	 std::map<std::string, int> predicatesIds;
-	 std::map<std::string, CompKind> eventCompositions;
+	 std::map<std::string, std::string> eventCompositions;
 	 int predicateCount = 0;
 	 int aggregateCount = 0;
 	 Template* templateCE;

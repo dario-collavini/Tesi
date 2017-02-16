@@ -58,7 +58,6 @@ typedef struct AllWithin {
 	TimeMs window;
 	std::list<TimeMs> RootTimestamps; //dynamic buffer to avoid that some events overwrite values before they are processed by TRexListener
 	std::list<TimeMs> AllTimestamps;
-	int allEventCount;
 }AllHelper;
 
 /**

@@ -72,36 +72,54 @@ RDFEvent* createRDF(PubPkt* pkt, Template* templateCE){
 //Called just for ALL_WITHIN rules
 std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOfGroupEvents, std::map<int, Template*> templates){
 	std::vector<RDFEvent*> results;
-	/*std::map<int, std::vector<PubPkt*> > pubPktMapVector;
-	int index = 0;*/
 	for(std::map<int, std::vector<PubPkt*> >::iterator it = typesOfGroupEvents.begin(); it != typesOfGroupEvents.end(); it++){
 		int nEventsToCreate;//init
-		int numAllEvents;
+		int numAllEvents = 0;
 		std::vector<PubPkt*> pubPktVector = it->second;
 		Template* templateCE = templates.find(it->first)->second;
 		unsigned int numOfTriples = templateCE->triples.size();
 		unsigned int numOfPkt =  pubPktVector.size();
-		TimeMs timeRoot = templateCE->allRuleInfos->RootTimestamps.front();
-		templateCE->allRuleInfos->RootTimestamps.pop_front();//delete first element, we don't need them anymore
-		std::list<TimeMs>::iterator allEvTime = templateCE->allRuleInfos->AllTimestamps.begin();
 		if(templateCE->isRuleEachAllWithin == true){
-			//conto occorrenze di tipo ALL_WITHIN
+			std::list<TimeMs>::iterator rootEvTime = templateCE->allRuleInfos->RootTimestamps.begin();
+			std::list<TimeMs>::iterator allEvTime = templateCE->allRuleInfos->AllTimestamps.begin();
+			TimeMs timeRoot;
+			bool deleted = false;
+			//clean root timestamps no more useful
+			while(rootEvTime != templateCE->allRuleInfos->RootTimestamps.end()){
+				if(rootEvTime->getTimeVal() <= allEvTime->getTimeVal()){
+					//terminatore prima dell'evento, non mi serve più
+					deleted = true;
+					rootEvTime = templateCE->allRuleInfos->RootTimestamps.erase(rootEvTime);
+				}else{
+					//trovato root > allEvent (c'è per forza perchè è stato creato almeno un evento complesso)
+					timeRoot = templateCE->allRuleInfos->RootTimestamps.front();
+					templateCE->allRuleInfos->RootTimestamps.pop_front();//delete first element, we don't need it anymore
+					break;//found, can exit
+				}
+				if(deleted == false){//incremento (se non ho eliminato il rootTimestamp)
+					rootEvTime++;	//it never enters it (timeRoot is always found because a Complex Event has been created)
+				}
+				deleted = false;
+			}
+			//loop on AllEvents, deleting the ones no more valid (out of window size)
 			while(allEvTime != templateCE->allRuleInfos->AllTimestamps.end()){
-				if((timeRoot.getTimeVal() - allEvTime->getTimeVal()) > templateCE->allRuleInfos->window.getTimeVal()){
+				if((rootEvTime->getTimeVal() - allEvTime->getTimeVal()) > templateCE->allRuleInfos->window.getTimeVal()){
 					//window root/event > than max, can delete the element (no more useful)
 					allEvTime = templateCE->allRuleInfos->AllTimestamps.erase(allEvTime);
-				}else{
-					templateCE->allRuleInfos->allEventCount++;
+				}else if(rootEvTime->getTimeVal() - allEvTime->getTimeVal() < 0){
+					//can exit, because allEvent > rootEvent
+					break;
+				}
+				else{
+					numAllEvents++;//count the number of "all" events for each "each"
 					allEvTime++;
 				}
 			}
-			numAllEvents = templateCE->allRuleInfos->allEventCount;
 			nEventsToCreate = (numOfPkt / numAllEvents);			//one event for each "each"
 		}else{
 			nEventsToCreate = 1;									//one single event
 			numAllEvents = numOfPkt;
 		}
-		templateCE->allRuleInfos->allEventCount = 0; //reset for next evaluation
 		for(int e = 0; e < nEventsToCreate; e++){
 			RDFEvent* event = new RDFEvent;
 			event->eventType = it->first;
@@ -116,7 +134,7 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOf
 					int index;
 					ValType attType;
 					Attribute att;
-					if(j == 0){//first PubPkt, no duplicates for sure
+					if(j == (0 + e*numAllEvents)){//first PubPkt, no duplicates for sure
 						Triple t;
 						t.subject = new char[LEN];
 						t.predicate = new char[LEN];
@@ -172,7 +190,7 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOf
 						dupTriples.push_back(dt);
 					}
 				}
-				if(j != 0) event->duplicateTriples.push_back(dupTriples);//it's not first PubPkt, so push duplicate PubPkt into the vector
+				if(j != (0 + e*numAllEvents)) event->duplicateTriples.push_back(dupTriples);//it's not first PubPkt, so push duplicate PubPkt into the vector
 				event->attributes.push_back(attributesMap);//vector[0] is for first PubPkt attributes, >0 for duplicates PubPkt attributes
 			}
 			results.push_back(event);
