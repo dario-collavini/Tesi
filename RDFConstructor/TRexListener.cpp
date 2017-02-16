@@ -75,131 +75,108 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOf
 	/*std::map<int, std::vector<PubPkt*> > pubPktMapVector;
 	int index = 0;*/
 	for(std::map<int, std::vector<PubPkt*> >::iterator it = typesOfGroupEvents.begin(); it != typesOfGroupEvents.end(); it++){
+		int nEventsToCreate;//init
+		int numAllEvents;
 		std::vector<PubPkt*> pubPktVector = it->second;
 		Template* templateCE = templates.find(it->first)->second;
-		/*std::set<std::string> supportVars;
-		std::map<int, int> supportValuesI;
-		std::map<float, int> supportValuesF;
-		std::map<bool, int> supportValuesB;
-		std::map<std::string, int> supportValuesS;
-		for(std::vector<int>::iterator num = templateCE->typesOfEachAllEvent.begin(); num != templateCE->typesOfEachAllEvent.end(); num++){
-			for(std::vector<TripleTemplate>::iterator triple = templateCE->triples.begin(); triple != templateCE->triples.end(); triple++){
-				if(std::get<2>(triple->subject) == *num){
-					supportVars.insert(std::get<1>(triple->subject));
-				}
-				if(std::get<2>(triple->predicate) == *num){
-					supportVars.insert(std::get<1>(triple->predicate));
-				}
-				if(std::get<2>(triple->object) == *num){
-					supportVars.insert(std::get<1>(triple->object));
-				}
-			}
-		}
-		//smisto pacchetti in vettori in base ai valori delle vars in supportVars
-		for(std::vector<PubPkt*>::iterator pubPkt = pubPktVector.begin(); pubPkt != pubPktVector.end(); pubPkt++){
-			for(std::vector<std::string>::iterator var = supportVars.begin(); var != supportVars.end();var++){
-				int index;
-				ValType valtype;
-				char* name = new char[LEN];
-				strcpy(name, (*var).c_str());
-				(*pubPkt)->getAttributeIndexAndType(name+1, index, valtype);//+1 drops '?' or '$'
-				switch(valtype){
-				case INT:
-					int iValue = (*pubPkt)->getIntAttributeVal(index);
-					if(supportValuesI.find(iValue) != supportValuesI.end()){//esiste già un vettore con quel valore
-
-					}else{//creo vettore
-						std::vector<>
-					}
-					break;
-				case FLOAT:
-					float fValue = (*pubPkt)->getFloatAttributeVal(index);
-					break;
-				case BOOL:
-					int bValue = (*pubPkt)->getBoolAttributeVal(index);
-					break;
-				case BOOL:
-					char* string = new char[LEN];
-					(*pubPkt)->getStringAttributeVal(index, string);
-					break;
-				}
-			}
-		}*/
 		unsigned int numOfTriples = templateCE->triples.size();
 		unsigned int numOfPkt =  pubPktVector.size();
-		RDFEvent* event = new RDFEvent;
-		event->eventType = it->first;
-		event->prefixesArray = RDFStore::getInstance()->getPrefixesArray();
-		event->prefixesArrayLength = RDFStore::getInstance()->getPrefixesArrayLength();
-		for(unsigned int j = 0; j < numOfPkt; j++){
-			PubPkt* pubPkt = pubPktVector[j];
-			std::map<std::string, Attribute> attributesMap;
-			std::vector<Triple> dupTriples;
-			for(unsigned int n = 0; n < numOfTriples; n++){
-				TripleTemplate temp = templateCE->triples[n];
-				int index;
-				ValType attType;
-				Attribute att;
-				if(j == 0){//first PubPkt, no duplicates for sure
-					Triple t;
-					t.subject = new char[LEN];
-					t.predicate = new char[LEN];
-					t.object = new char[LEN];
-					strcpy(t.subject, temp.subject.second.c_str());
-					strcpy(t.predicate,temp.predicate.second.c_str());
-					strcpy(t.object, temp.object.second.c_str());
-					if(temp.subject.first == IS_VAR){
-						pubPkt->getAttributeIndexAndType(t.subject+1, index, attType);//+1 removes '?' or '$' of sparql var
-						att = pubPkt->getAttribute(index);
-						attributesMap.insert(std::make_pair(att.name, att));//attributes saved for final evaluation of subscriptions
-						strcpy(t.subject, getValue(att).c_str());
-					}
-					if(temp.predicate.first == IS_VAR){
-						pubPkt->getAttributeIndexAndType(t.predicate+1, index, attType);
-						att = pubPkt->getAttribute(index);
-						attributesMap.insert(std::make_pair(att.name, att));
-						strcpy(t.predicate, getValue(att).c_str());
-					}
-					if(temp.object.first == IS_VAR){
-						pubPkt->getAttributeIndexAndType(t.object+1, index, attType);
-						att = pubPkt->getAttribute(index);
-						attributesMap.insert(std::make_pair(att.name, att));
-						strcpy(t.object, getValue(att).c_str());
-					}
-					event->triples.push_back(t);
-				}else{//it is not the first PubPkt, needs to be handled as a duplicate
-					Triple dt;
-					dt.subject = new char[LEN];
-					dt.predicate = new char[LEN];
-					dt.object = new char[LEN];
-					strcpy(dt.subject, temp.subject.second.c_str());
-					strcpy(dt.predicate,temp.predicate.second.c_str());
-					strcpy(dt.object, temp.object.second.c_str());
-					if(temp.subject.first == IS_VAR){
-						pubPkt->getAttributeIndexAndType(dt.subject+1, index, attType);
-						att = pubPkt->getAttribute(index);
-						attributesMap.insert(std::make_pair(att.name, att));
-						strcpy(dt.subject, getValue(att).c_str());
-					}
-					if(temp.predicate.first == IS_VAR){
-						pubPkt->getAttributeIndexAndType(dt.predicate+1, index, attType);
-						att = pubPkt->getAttribute(index);
-						attributesMap.insert(std::make_pair(att.name, att));
-						strcpy(dt.predicate, getValue(att).c_str());
-					}
-					if(temp.object.first == IS_VAR){
-						pubPkt->getAttributeIndexAndType(dt.object+1, index, attType);
-						att = pubPkt->getAttribute(index);
-						attributesMap.insert(std::make_pair(att.name, att));
-						strcpy(dt.object, getValue(att).c_str());
-					}
-					dupTriples.push_back(dt);
+		TimeMs timeRoot = templateCE->allRuleInfos->RootTimestamps.front();
+		templateCE->allRuleInfos->RootTimestamps.pop_front();//delete first element, we don't need them anymore
+		std::list<TimeMs>::iterator allEvTime = templateCE->allRuleInfos->AllTimestamps.begin();
+		if(templateCE->isRuleEachAllWithin == true){
+			//conto occorrenze di tipo ALL_WITHIN
+			while(allEvTime != templateCE->allRuleInfos->AllTimestamps.end()){
+				if((timeRoot.getTimeVal() - allEvTime->getTimeVal()) > templateCE->allRuleInfos->window.getTimeVal()){
+					//window root/event > than max, can delete the element (no more useful)
+					allEvTime = templateCE->allRuleInfos->AllTimestamps.erase(allEvTime);
+				}else{
+					templateCE->allRuleInfos->allEventCount++;
+					allEvTime++;
 				}
 			}
-			if(j != 0) event->duplicateTriples.push_back(dupTriples);//it's not first PubPkt, so push duplicate PubPkt into the vector
-			event->attributes.push_back(attributesMap);//vector[0] is for first PubPkt attributes, >0 for duplicates PubPkt attributes
+			numAllEvents = templateCE->allRuleInfos->allEventCount;
+			nEventsToCreate = (numOfPkt / numAllEvents);			//one event for each "each"
+		}else{
+			nEventsToCreate = 1;									//one single event
+			numAllEvents = numOfPkt;
 		}
-		results.push_back(event);
+		templateCE->allRuleInfos->allEventCount = 0; //reset for next evaluation
+		for(int e = 0; e < nEventsToCreate; e++){
+			RDFEvent* event = new RDFEvent;
+			event->eventType = it->first;
+			event->prefixesArray = RDFStore::getInstance()->getPrefixesArray();
+			event->prefixesArrayLength = RDFStore::getInstance()->getPrefixesArrayLength();
+			for(int j = 0 + e*numAllEvents; j < numAllEvents + e*numAllEvents; j++){
+				PubPkt* pubPkt = pubPktVector[j];
+				std::map<std::string, Attribute> attributesMap;
+				std::vector<Triple> dupTriples;
+				for(unsigned int n = 0; n < numOfTriples; n++){
+					TripleTemplate temp = templateCE->triples[n];
+					int index;
+					ValType attType;
+					Attribute att;
+					if(j == 0){//first PubPkt, no duplicates for sure
+						Triple t;
+						t.subject = new char[LEN];
+						t.predicate = new char[LEN];
+						t.object = new char[LEN];
+						strcpy(t.subject, temp.subject.second.c_str());
+						strcpy(t.predicate,temp.predicate.second.c_str());
+						strcpy(t.object, temp.object.second.c_str());
+						if(temp.subject.first == IS_VAR){
+							pubPkt->getAttributeIndexAndType(t.subject+1, index, attType);//+1 removes '?' or '$' of sparql var
+							att = pubPkt->getAttribute(index);
+							attributesMap.insert(std::make_pair(att.name, att));//attributes saved for final evaluation of subscriptions
+							strcpy(t.subject, getValue(att).c_str());
+						}
+						if(temp.predicate.first == IS_VAR){
+							pubPkt->getAttributeIndexAndType(t.predicate+1, index, attType);
+							att = pubPkt->getAttribute(index);
+							attributesMap.insert(std::make_pair(att.name, att));
+							strcpy(t.predicate, getValue(att).c_str());
+						}
+						if(temp.object.first == IS_VAR){
+							pubPkt->getAttributeIndexAndType(t.object+1, index, attType);
+							att = pubPkt->getAttribute(index);
+							attributesMap.insert(std::make_pair(att.name, att));
+							strcpy(t.object, getValue(att).c_str());
+						}
+						event->triples.push_back(t);
+					}else{//it is not the first PubPkt, needs to be handled as a duplicate
+						Triple dt;
+						dt.subject = new char[LEN];
+						dt.predicate = new char[LEN];
+						dt.object = new char[LEN];
+						strcpy(dt.subject, temp.subject.second.c_str());
+						strcpy(dt.predicate,temp.predicate.second.c_str());
+						strcpy(dt.object, temp.object.second.c_str());
+						if(temp.subject.first == IS_VAR){
+							pubPkt->getAttributeIndexAndType(dt.subject+1, index, attType);
+							att = pubPkt->getAttribute(index);
+							attributesMap.insert(std::make_pair(att.name, att));
+							strcpy(dt.subject, getValue(att).c_str());
+						}
+						if(temp.predicate.first == IS_VAR){
+							pubPkt->getAttributeIndexAndType(dt.predicate+1, index, attType);
+							att = pubPkt->getAttribute(index);
+							attributesMap.insert(std::make_pair(att.name, att));
+							strcpy(dt.predicate, getValue(att).c_str());
+						}
+						if(temp.object.first == IS_VAR){
+							pubPkt->getAttributeIndexAndType(dt.object+1, index, attType);
+							att = pubPkt->getAttribute(index);
+							attributesMap.insert(std::make_pair(att.name, att));
+							strcpy(dt.object, getValue(att).c_str());
+						}
+						dupTriples.push_back(dt);
+					}
+				}
+				if(j != 0) event->duplicateTriples.push_back(dupTriples);//it's not first PubPkt, so push duplicate PubPkt into the vector
+				event->attributes.push_back(attributesMap);//vector[0] is for first PubPkt attributes, >0 for duplicates PubPkt attributes
+			}
+			results.push_back(event);
+		}
 	}
 	return results;
 }

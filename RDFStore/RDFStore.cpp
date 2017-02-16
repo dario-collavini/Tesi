@@ -41,8 +41,6 @@ RDFStore::~RDFStore(){
 	delete this->dlogRules;
 	delete[] this->prefixesArray;
 	for (std::map<int,RuleQuery*>::iterator query = this->queries.begin(); query != this->queries.end(); query++){	
-		delete query->second->queryName;
-		delete query->second->queryString;
 		delete query->second;
 	}
 }
@@ -116,12 +114,12 @@ std::vector<std::string> findVars(const char* query){
 	}
 }
 
-void RDFStore::addQuery(int type, const char* name, const char* string){
+void RDFStore::addQuery(int type, std::string name, std::string string){
 	RuleQuery *temp = new RuleQuery;
 	temp->eventType = type;
 	temp->queryName = name;
 	temp->queryString = string;
-	temp->vars = findVars(string);
+	temp->vars = findVars(string.c_str());
 	queries.insert(std::pair<int, RuleQuery*>(type, temp));
 }
 
@@ -158,7 +156,7 @@ std::vector<Event*> RDFStore::evaluateSingleQuery(RuleQuery* q){
 	std::vector<Event*> events;
 	Resource *tempRes;
 	Event *tempEvent;								
-	RDFoxDataStoreTupleIterator_CompileQuery(queryIterator,*(this->store), q->queryString, NULL, 0, this->prefixesArray, this->prefixesArrayLength);
+	RDFoxDataStoreTupleIterator_CompileQuery(queryIterator,*(this->store), q->queryString.c_str(), NULL, 0, this->prefixesArray, this->prefixesArrayLength);
 	RDFoxDataStoreTupleIterator_GetArity(this->numVars, *(this->queryIterator));
 	RDFoxDataStoreTupleIterator_Open(this->isQueryMatched, *(this->queryIterator), *(this->numVars), this->resourceIDs);
 	while(*(this->isQueryMatched) != 0){//while there are still  query results, do the loop and create a new event

@@ -91,19 +91,19 @@ int main(int argc, char* argv[])
 	const char* e6 = "./TestEvents/t8.ttl";
 	
 	std::cout << "--------------------Evento " << a << "-----------------------------" << "\n";
-	processPubPkt(conv.convertToTesla(store->processRdfEvent(e1)), e);
+	processPubPkt(conv.convertToTesla(store->processRdfEvent(e1), constructor), e);
 	std::cout << "--------------------Evento " << a << "-----------------------------" << "\n";
-	processPubPkt(conv.convertToTesla(store->processRdfEvent(e11)), e);
+	processPubPkt(conv.convertToTesla(store->processRdfEvent(e11), constructor), e);
 	std::cout << "--------------------Evento " << a << "-----------------------------" << "\n";
-	processPubPkt(conv.convertToTesla(store->processRdfEvent(e2)), e);
+	processPubPkt(conv.convertToTesla(store->processRdfEvent(e2), constructor), e);
 	std::cout << "--------------------Evento " << a << "-----------------------------" << "\n";
-	processPubPkt(conv.convertToTesla(store->processRdfEvent(e3)), e);
+	processPubPkt(conv.convertToTesla(store->processRdfEvent(e3), constructor), e);
 	std::cout << "--------------------Evento " << a << "-----------------------------" << "\n";
-	processPubPkt(conv.convertToTesla(store->processRdfEvent(e4)), e);
+	processPubPkt(conv.convertToTesla(store->processRdfEvent(e4), constructor), e);
 	std::cout << "--------------------Evento " << a << "-----------------------------" << "\n";
-	processPubPkt(conv.convertToTesla(store->processRdfEvent(e5)), e);
+	processPubPkt(conv.convertToTesla(store->processRdfEvent(e5), constructor), e);
 	std::cout << "--------------------Evento " << a << "-----------------------------" << "\n";
-	processPubPkt(conv.convertToTesla(store->processRdfEvent(e6)), e);
+	processPubPkt(conv.convertToTesla(store->processRdfEvent(e6), constructor), e);
 	std::cout << "-------------------------------------------------------------------" << "\n";
 
 	return 0;

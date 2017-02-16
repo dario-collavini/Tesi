@@ -63,9 +63,12 @@ OpTreeOperation getBinOp(std::string op) {
 void RDFTRexRuleParser::enterCe_definition(RDFTESLAParser::Ce_definitionContext * ctx){
 	int type = eventId_map.find(ctx->EVT_NAME()->getText())->second;
 	templateCE = new Template;//freed by RDFConstructor
+	templateCE->allRuleInfos = new AllHelper;//freed by RDFConstructor
 	rule = new RulePkt(false);//freed later by TRex
 	templateCE->eventType = type;
 	templateCE->isRuleAllWithin = false;//change on the go if "all" is find
+	templateCE->isRuleEachAllWithin = false;
+	templateCE->allRuleInfos->allEventCount = 0;//init
 	ceTRex = new CompositeEventTemplate(type);//freed by TRex
 	rule->setCompositeEventTemplate(ceTRex);
 	RDFTESLAParser::Rdf_patternContext* pattern = ctx->rdf_pattern();
@@ -106,6 +109,7 @@ void RDFTRexRuleParser::enterTerminator(RDFTESLAParser::TerminatorContext * ctx)
 		}
 	}
 	rule->addRootPredicate(eventType, NULL, 0);
+	templateCE->allRuleInfos->typeTerminator = eventType;
 	predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));//predicateCount = 0 here
 	predicateCount++;
 }
@@ -126,15 +130,16 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 				eventId_map.insert(std::pair<std::string, int>(ctx->predicate()->event_alias()->EVT_NAME()->getText(), eventType));
 			}
 		}
-		if(checkAllWithin(ctx)){
-			templateCE->isRuleAllWithin = true;
-			/*if(eventCompositions.find(refEvent)->second == EACH_WITHIN){//rule is all within x from (event of type each)
-				int typeOfRefEvent = eventId_map.find(refEvent)->second;
-				templateCE->typesOfEachAllEvent.push_back(typeOfRefEvent);
-			}*/
-		}
 		TimeMs time(stoi(ctx->neg_one_reference()->INT_VAL()->getText()));
 		rule->addPredicate(eventType, NULL, 0, predId, time, comp);
+		if(checkAllWithin(ctx)){
+			templateCE->isRuleAllWithin = true;
+			templateCE->allRuleInfos->typeEventAll = eventType;
+			templateCE->allRuleInfos->window = rule->getWinBetween(0, predicateCount);//0=root
+			if(eventCompositions.find(refEvent)->second == EACH_WITHIN){//rule is all within x from (event of type each)
+				templateCE->isRuleEachAllWithin = true;
+			}
+		}
 		eventCompositions.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), comp));
 		predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
 		predicateCount++;
@@ -416,11 +421,7 @@ void RDFTRexRuleParser::parse(std::string rule, RDFStore* store, TRexEngine* eng
 			std::string string = std::get<2>(queries[i]);
 			int nameLen = name.size();
 			int stringLen = string.size();
-			char* cname = new char[nameLen]; //freed by RDFStore
-			char*	cstring = new char[stringLen];//freed by RDFStore
-			strcpy(cname, name.c_str());
-			strcpy(cstring, string.c_str());
-			store->addQuery(type, cname, cstring);
+			store->addQuery(type, name, string);
 	}
 	constructor->addTemplate(templateCE->eventType, templateCE);
 	engine->processRulePkt(this->rule);

@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <list>
 
 /**
  * Used inside RDF complex event template
@@ -20,8 +21,8 @@ enum IsVar{
  */
 typedef struct SparqlQuery {
 	int eventType;
-	const char* queryName;
-	const char* queryString;
+	std::string queryName;
+	std::string queryString;
 	std::vector<std::string> vars;
 } RuleQuery;
 
@@ -51,6 +52,15 @@ typedef struct SparqlAnswer {
 	std::map<std::string, Resource*> attributes;
 } Event;
 
+typedef struct AllWithin {
+	int typeTerminator;
+	int typeEventAll;
+	TimeMs window;
+	std::list<TimeMs> RootTimestamps; //dynamic buffer to avoid that some events overwrite values before they are processed by TRexListener
+	std::list<TimeMs> AllTimestamps;
+	int allEventCount;
+}AllHelper;
+
 /**
  * Single triple pattern of a RDF complex event, extracted from parsing a rule.
  */
@@ -67,6 +77,8 @@ typedef struct RDFTemplate {
 	int eventType;
 	std::vector<TripleTemplate> triples;
 	bool isRuleAllWithin;					//helps implementing a first version of ALL_WITHIN (without modifying TRex library)
+	bool isRuleEachAllWithin;
+	AllHelper* allRuleInfos;					//exists only if isRuleEachAllWithin is true
 } Template;
 
 /**
