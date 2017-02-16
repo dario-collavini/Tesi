@@ -187,6 +187,8 @@ void RDFTRexRuleParser::enterNegative_predicate(RDFTESLAParser::Negative_predica
 		int predId2 = predicatesIds.find(neg_between->EVT_NAME(1)->getText())->second;
 		rule->addNegationBetweenStates(eventType, NULL, 0, predId1, predId2);
 	}
+	negPredIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), negationCount));
+	negationCount++;
 }
 
 void RDFTRexRuleParser::enterParametrization(RDFTESLAParser::ParametrizationContext * ctx){
@@ -200,8 +202,15 @@ void RDFTRexRuleParser::enterParametrization(RDFTESLAParser::ParametrizationCont
 		char* v2 = new char[SIZE];
 		strcpy(v1, var1.c_str());
 		strcpy(v2, var2.c_str());
-		//TODO aggiungere addparameternegation
-		rule->addParameterBetweenStates(predId1, v1+1, predId2, v2+1);//+1 drops the '?' or '$'
+		if(negPredIds.find(ctx->packet_reference(i)->EVT_NAME()->getText()) != negPredIds.end()){
+			int negId1 = negPredIds.find(ctx->packet_reference(i)->EVT_NAME()->getText())->second;
+			rule->addParameterForNegation(predId2, v2+1, negId1, v1+1);
+		}else if(negPredIds.find(ctx->packet_reference(i+1)->EVT_NAME()->getText()) != negPredIds.end()){
+			int negId2 = negPredIds.find(ctx->packet_reference(i+1)->EVT_NAME()->getText())->second;
+			rule->addParameterForNegation(predId1, v1+1, negId2, v2+1);
+		}else{
+			rule->addParameterBetweenStates(predId1, v1+1, predId2, v2+1);//+1 drops the '?' or '$'
+		}
 		delete v1;
 		delete v2;
 	}
@@ -211,8 +220,8 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 		if (expr->param_atom() != NULL) {
 			//This is a leaf!
 			RDFTESLAParser::Param_atomContext* ctxParam = expr->param_atom();
-			StaticValueReference* value;
-			ValType vtype;
+			StaticValueReference* value = NULL;
+			ValType vtype = INT;//init purposes
 			if (ctxParam->static_reference() != NULL) {
 				if (ctxParam->static_reference()->INT_VAL() != NULL) {
 					int val = stoi(ctxParam->static_reference()->INT_VAL()->getText());
@@ -242,7 +251,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 					vtype = STRING;
 					delete s;
 				}
-				return new OpTree(value, vtype);//FIXME value is freed?
+				return new OpTree(value, vtype);
 			}
 			else if (ctxParam->packet_reference()!=NULL) {
 				//this is a reference to an attribute from another query
@@ -303,7 +312,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 					}else if(constrParam->expr()->aggregate_atom() != NULL){
 						rule->addComplexParameterForAggregate(getConstrOp(constrParam->OPERATOR()->getText()), getValType(constrParam->VALTYPE()->getText()), varTree, buildOpTree(constrParam->expr(), getValType(constrParam->VALTYPE()->getText())));
 					}else{//this is an expr
-						//FIXME add case if possible
+						//not implemented (RDFTRex doesn't use parameters)
 					}
 					delete name;
 				}
@@ -332,7 +341,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 			std::vector<RDFTESLAParser::ExprContext*> exprVector = expr->expr();
 			for(unsigned int m = 0; m < exprVector.size(); m++){
 				RDFTESLAParser::ExprContext* subExpr = expr->expr(m);
-				OpTreeOperation op;
+				OpTreeOperation op = OR;
 				if(expr->BINOP_MUL() != NULL){
 					op = getBinOp(expr->BINOP_MUL()->getText());
 				}else if(expr->BINOP_ADD() != NULL){
@@ -385,7 +394,7 @@ void RDFTRexRuleParser::enterDefinitions(RDFTESLAParser::DefinitionsContext * ct
 	unsigned int numParam = ctx->attr_definition().size();
 	for(unsigned int j = 0; j < numParam; j++){
 		char* name = new char[SIZE];
-		ValType type;
+		ValType type = INT;
 		std::string stringVar = ctx->attr_definition(j)->SPARQL_VAR()->getText();
 		std::string valtype = ctx->attr_definition(j)->VALTYPE()->getText();
 		strcpy(name, stringVar.c_str());
