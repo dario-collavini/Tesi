@@ -115,12 +115,14 @@ std::vector<std::string> findVars(const char* query){
 }
 
 void RDFStore::addQuery(int type, std::string name, std::string string){
-	RuleQuery *temp = new RuleQuery;
-	temp->eventType = type;
-	temp->queryName = name;
-	temp->queryString = string;
-	temp->vars = findVars(string.c_str());
-	queries.insert(std::pair<int, RuleQuery*>(type, temp));
+	if(queries.find(type) == queries.end()){//add a new query if it is not present
+		RuleQuery *temp = new RuleQuery;
+		temp->eventType = type;
+		temp->queryName = name;
+		temp->queryString = string;
+		temp->vars = findVars(string.c_str());
+		queries.insert(std::pair<int, RuleQuery*>(type, temp));
+	}
 }
 
 //Import update: 0 ADD

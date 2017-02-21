@@ -133,10 +133,10 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 		rule->addPredicate(eventType, NULL, 0, predId, time, comp);
 		if(checkAllWithin(ctx)){
 			templateCE->isRuleAllWithin = true;
-			templateCE->allRuleInfos->typeEventAll = eventType;
-			templateCE->allRuleInfos->window = rule->getWinBetween(0, predicateCount);//0=root
 			if(eventCompositions.find(refEvent)!=eventCompositions.end() && eventCompositions.find(refEvent)->second.compare("each") == 0){//rule is all within x from (event of type each)
 				templateCE->isRuleEachAllWithin = true;
+				templateCE->allRuleInfos->typeEventAll = eventType;
+				templateCE->allRuleInfos->window = rule->getWinBetween(0, predicateCount);//0=root
 			}
 		}
 		eventCompositions.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), ctx->SEL_POLICY()->getText()));
@@ -155,7 +155,7 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 			}
 		}
 		if(checkAllWithin(ctx)){
-		templateCE->isRuleAllWithin = true;
+			templateCE->isRuleAllWithin = true;
 		}
 		TimeMs time = rule->getWinBetween(predId1, predId2);
 		rule->addPredicate(eventType, NULL, 0, predId1, time, getCompKind(ctx));

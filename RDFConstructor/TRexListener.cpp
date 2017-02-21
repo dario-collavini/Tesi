@@ -82,7 +82,6 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOf
 		if(templateCE->isRuleEachAllWithin == true){
 			std::list<TimeMs>::iterator rootEvTime = templateCE->allRuleInfos->RootTimestamps.begin();
 			std::list<TimeMs>::iterator allEvTime = templateCE->allRuleInfos->AllTimestamps.begin();
-			TimeMs timeRoot;
 			bool deleted = false;
 			//clean root timestamps no more useful
 			while(rootEvTime != templateCE->allRuleInfos->RootTimestamps.end()){
@@ -92,8 +91,6 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOf
 					rootEvTime = templateCE->allRuleInfos->RootTimestamps.erase(rootEvTime);
 				}else{
 					//trovato root > allEvent (c'è per forza perchè è stato creato almeno un evento complesso)
-					timeRoot = templateCE->allRuleInfos->RootTimestamps.front();
-					templateCE->allRuleInfos->RootTimestamps.pop_front();//delete first element, we don't need it anymore
 					break;//found, can exit
 				}
 				if(deleted == false){//incremento (se non ho eliminato il rootTimestamp)
@@ -108,6 +105,7 @@ std::vector<RDFEvent*> createRDFAll(std::map<int, std::vector<PubPkt*> > typesOf
 					allEvTime = templateCE->allRuleInfos->AllTimestamps.erase(allEvTime);
 				}else if(rootEvTime->getTimeVal() - allEvTime->getTimeVal() < 0){
 					//can exit, because allEvent > rootEvent
+					templateCE->allRuleInfos->RootTimestamps.pop_front();//delete first element, we don't need it anymore
 					break;
 				}
 				else{
