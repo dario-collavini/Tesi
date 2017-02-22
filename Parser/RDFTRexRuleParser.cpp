@@ -33,7 +33,7 @@ AggregateFun getAggregateFun(std::string fun) {
 }
 
 Op getConstrOp(std::string source) {
-	if(source.compare("0") == 0)	return EQ;
+	if(source.compare("=") == 0)	return EQ;
 	if (source.compare(">") == 0)	return GT;
 	if (source.compare("<") == 0)	return LT;
 	if (source.compare("<=") == 0)	return LE;
@@ -107,7 +107,38 @@ void RDFTRexRuleParser::enterTerminator(RDFTESLAParser::TerminatorContext * ctx)
 			eventId_map.insert(std::pair<std::string, int>(ctx->predicate()->event_alias()->EVT_NAME()->getText(), eventType));
 		}
 	}
-	rule->addRootPredicate(eventType, NULL, 0);
+	int numConstr = ctx->predicate()->attr_constraint().size();
+	if(numConstr == 0){
+		rule->addRootPredicate(eventType, NULL, 0);
+	}
+	else{
+		Constraint c[numConstr];
+		for(int i=0; i< numConstr;i++){
+				RDFTESLAParser::Attr_constraintContext* constrCtx = ctx->predicate()->attr_constraint(i);
+				if(constrCtx->static_reference()->INT_VAL() != NULL){
+					c[i].type = INT;
+					c[i].intVal = stoi(constrCtx->static_reference()->INT_VAL()->getText());
+				}else if(constrCtx->static_reference()->FLOAT_VAL() != NULL){
+					c[i].type = FLOAT;
+					c[i].floatVal = stof(constrCtx->static_reference()->FLOAT_VAL()->getText());
+				}else if(constrCtx->static_reference()->BOOL_VAL() != NULL){
+					c[i].type = BOOL;
+					if(constrCtx->static_reference()->BOOL_VAL()->getText().compare("true") == 0) c[i].boolVal= true;
+					else c[i].boolVal = false;
+				}else if(constrCtx->static_reference()->STRING_VAL() != NULL){
+					std::string string = constrCtx->static_reference()->STRING_VAL()->getText();
+					//remove quotes from the string
+					string.erase(0,1);//erase '"'
+					string.erase(string.end()-1, string.end());//erase '"'
+					strcpy(c[i].stringVal, string.c_str());
+					c[i].type = STRING;
+				}
+				std::string name = constrCtx->SPARQL_VAR()->getText();
+				strcpy(c[i].name, name.c_str()+1);//delete '?' or '$'
+				c[i].op = getConstrOp(constrCtx->OPERATOR()->getText());
+		}
+		rule->addRootPredicate(eventType, c, numConstr);
+	}
 	templateCE->allRuleInfos->typeTerminator = eventType;
 	predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));//predicateCount = 0 here
 	predicateCount++;
@@ -130,7 +161,41 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 			}
 		}
 		TimeMs time(stoi(ctx->neg_one_reference()->INT_VAL()->getText()));
-		rule->addPredicate(eventType, NULL, 0, predId, time, comp);
+		int numConstr = ctx->predicate()->attr_constraint().size();
+		if(numConstr == 0){
+			rule->addPredicate(eventType, NULL, 0, predId, time, comp);
+		}
+		else{
+			Constraint c[numConstr];
+			for(int i=0; i< numConstr;i++){
+				RDFTESLAParser::Attr_constraintContext* constrCtx = ctx->predicate()->attr_constraint(i);
+				if(constrCtx->static_reference()->INT_VAL() != NULL){
+					c[i].type = INT;
+					c[i].op = getConstrOp(constrCtx->OPERATOR()->getText());
+					c[i].intVal = stoi(constrCtx->static_reference()->INT_VAL()->getText());
+				}else if(constrCtx->static_reference()->FLOAT_VAL() != NULL){
+					c[i].type = FLOAT;
+					c[i].op = getConstrOp(constrCtx->OPERATOR()->getText());
+					c[i].floatVal = stof(constrCtx->static_reference()->FLOAT_VAL()->getText());
+				}else if(constrCtx->static_reference()->BOOL_VAL() != NULL){
+					c[i].type = BOOL;
+					c[i].op = getConstrOp(constrCtx->OPERATOR()->getText());
+					if(constrCtx->static_reference()->BOOL_VAL()->getText().compare("true") == 0) c[i].boolVal= true;
+					else c[i].boolVal = false;
+				}else if(constrCtx->static_reference()->STRING_VAL() != NULL){
+					std::string string = constrCtx->static_reference()->STRING_VAL()->getText();
+					//remove quotes from the string
+					string.erase(0,1);//erase '"'
+					string.erase(string.end()-1, string.end());//erase '"'
+					strcpy(c[i].stringVal, string.c_str());
+					c[i].type = STRING;
+					c[i].op = getConstrOp(constrCtx->OPERATOR()->getText());
+				}
+					std::string name = constrCtx->SPARQL_VAR()->getText();
+					strcpy(c[i].name, name.c_str()+1);//delete '?' or '$'
+			}
+			rule->addPredicate(eventType, c, numConstr, predId, time, comp);
+		}
 		if(checkAllWithin(ctx)){
 			templateCE->isRuleAllWithin = true;
 			if(eventCompositions.find(refEvent)!=eventCompositions.end() && eventCompositions.find(refEvent)->second.compare("each") == 0){//rule is all within x from (event of type each)
@@ -142,7 +207,7 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 		eventCompositions.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), ctx->SEL_POLICY()->getText()));
 		predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
 		predicateCount++;
-	}else if(ctx->neg_between() != NULL){
+	}else if(ctx->neg_between() != NULL){//this is not implemented in trex...so it's here but no use
 		int predId1 = predicatesIds.find(ctx->neg_between()->EVT_NAME(0)->getText())->second;
 		int predId2 = predicatesIds.find(ctx->neg_between()->EVT_NAME(1)->getText())->second;
 		if(ctx->predicate()->SPARQL_QUERY() != NULL){
@@ -154,10 +219,41 @@ void RDFTRexRuleParser::enterPositive_predicate(RDFTESLAParser::Positive_predica
 				eventId_map.insert(std::pair<std::string, int>(ctx->predicate()->event_alias()->EVT_NAME()->getText(), eventType));
 			}
 		}
+		TimeMs time = rule->getWinBetween(predId1, predId2);
+		int numConstr = ctx->predicate()->attr_constraint().size();
+		if(numConstr == 0){
+			rule->addPredicate(eventType, NULL, 0, predId1, time, getCompKind(ctx));
+		}else{
+			Constraint c[numConstr];
+			for(int i=0; i< numConstr;i++){
+				RDFTESLAParser::Attr_constraintContext* constrCtx = ctx->predicate()->attr_constraint(i);
+				if(constrCtx->static_reference()->INT_VAL() != NULL){
+					c[i].type = INT;
+					c[i].intVal = stoi(constrCtx->static_reference()->INT_VAL()->getText());
+				}else if(constrCtx->static_reference()->FLOAT_VAL() != NULL){
+					c[i].type = FLOAT;
+					c[i].floatVal = stof(constrCtx->static_reference()->FLOAT_VAL()->getText());
+				}else if(constrCtx->static_reference()->BOOL_VAL() != NULL){
+					c[i].type = BOOL;
+					if(constrCtx->static_reference()->BOOL_VAL()->getText().compare("true") == 0) c[i].boolVal= true;
+					else c[i].boolVal = false;
+				}else if(constrCtx->static_reference()->STRING_VAL() != NULL){
+					std::string string = constrCtx->static_reference()->STRING_VAL()->getText();
+					//remove quotes from the string
+					string.erase(0,1);//erase '"'
+					string.erase(string.end()-1, string.end());//erase '"'
+					strcpy(c[i].stringVal, string.c_str());
+					c[i].type = STRING;
+				}
+				std::string name = constrCtx->SPARQL_VAR()->getText();
+				strcpy(c[i].name, name.c_str()+1);//delete '?' or '$'
+				c[i].op = getConstrOp(constrCtx->OPERATOR()->getText());
+			}
+			rule->addPredicate(eventType, c, numConstr, predId1, time, getCompKind(ctx));
+		}
 		if(checkAllWithin(ctx)){
 			templateCE->isRuleAllWithin = true;
 		}
-		TimeMs time = rule->getWinBetween(predId1, predId2);
 		rule->addPredicate(eventType, NULL, 0, predId1, time, getCompKind(ctx));
 		eventCompositions.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), ctx->SEL_POLICY()->getText()));
 		predicatesIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), predicateCount));
@@ -181,11 +277,73 @@ void RDFTRexRuleParser::enterNegative_predicate(RDFTESLAParser::Negative_predica
 	if(neg_one != NULL){
 		int predId = predicatesIds.find(neg_one->EVT_NAME()->getText())->second;
 		TimeMs time(stoi(neg_one->INT_VAL()->getText()));
-		rule->addTimeBasedNegation(eventType, NULL, 0, predId, time);
+		int numConstr = ctx->predicate()->attr_constraint().size();
+		if(numConstr == 0){
+			rule->addTimeBasedNegation(eventType, NULL, 0, predId, time);
+		}
+		else{
+			Constraint c[numConstr];
+			for(int i=0; i< numConstr;i++){
+				RDFTESLAParser::Attr_constraintContext* constrCtx = ctx->predicate()->attr_constraint(i);
+				if(constrCtx->static_reference()->INT_VAL() != NULL){
+					c[i].type = INT;
+					c[i].intVal = stoi(constrCtx->static_reference()->INT_VAL()->getText());
+				}else if(constrCtx->static_reference()->FLOAT_VAL() != NULL){
+					c[i].type = FLOAT;
+					c[i].floatVal = stof(constrCtx->static_reference()->FLOAT_VAL()->getText());
+				}else if(constrCtx->static_reference()->BOOL_VAL() != NULL){
+					c[i].type = BOOL;
+					if(constrCtx->static_reference()->BOOL_VAL()->getText().compare("true") == 0) c[i].boolVal= true;
+					else c[i].boolVal = false;
+				}else if(constrCtx->static_reference()->STRING_VAL() != NULL){
+					std::string string = constrCtx->static_reference()->STRING_VAL()->getText();
+					//remove quotes from the string
+					string.erase(0,1);//erase '"'
+					string.erase(string.end()-1, string.end());//erase '"'
+					strcpy(c[i].stringVal, string.c_str());
+					c[i].type = STRING;
+				}
+				std::string name = constrCtx->SPARQL_VAR()->getText();
+				strcpy(c[i].name, name.c_str()+1);//delete '?' or '$'
+				c[i].op = getConstrOp(constrCtx->OPERATOR()->getText());
+			}
+			rule->addTimeBasedNegation(eventType, c, numConstr, predId, time);
+		}
 	}else if(neg_between != NULL){
 		int predId1 = predicatesIds.find(neg_between->EVT_NAME(0)->getText())->second;
 		int predId2 = predicatesIds.find(neg_between->EVT_NAME(1)->getText())->second;
-		rule->addNegationBetweenStates(eventType, NULL, 0, predId1, predId2);
+		int numConstr = ctx->predicate()->attr_constraint().size();
+		if(numConstr == 0){
+			rule->addNegationBetweenStates(eventType, NULL, 0, predId1, predId2);
+		}
+		else{
+			Constraint c[numConstr];
+			for(int i=0; i< numConstr;i++){
+				RDFTESLAParser::Attr_constraintContext* constrCtx = ctx->predicate()->attr_constraint(i);
+				if(constrCtx->static_reference()->INT_VAL() != NULL){
+					c[i].type = INT;
+					c[i].op = getConstrOp(constrCtx->OPERATOR()->getText());
+					c[i].intVal = stoi(constrCtx->static_reference()->INT_VAL()->getText());
+				}else if(constrCtx->static_reference()->FLOAT_VAL() != NULL){
+					c[i].type = FLOAT;
+					c[i].floatVal = stof(constrCtx->static_reference()->FLOAT_VAL()->getText());
+				}else if(constrCtx->static_reference()->BOOL_VAL() != NULL){
+					c[i].type = BOOL;
+					if(constrCtx->static_reference()->BOOL_VAL()->getText().compare("true") == 0) c[i].boolVal= true;
+					else c[i].boolVal = false;
+				}else if(constrCtx->static_reference()->STRING_VAL() != NULL){
+					std::string string = constrCtx->static_reference()->STRING_VAL()->getText();
+					//remove quotes from the string
+					string.erase(0,1);//erase '"'
+					string.erase(string.end()-1, string.end());//erase '"'
+					strcpy(c[i].stringVal, string.c_str());
+					c[i].type = STRING;
+				}
+				std::string name = constrCtx->SPARQL_VAR()->getText();
+				strcpy(c[i].name, name.c_str()+1);//delete '?' or '$'
+			}
+			rule->addNegationBetweenStates(eventType, c, numConstr, predId1, predId2);
+		}
 	}
 	negPredIds.insert(std::make_pair(ctx->predicate()->EVT_NAME()->getText(), negationCount));
 	negationCount++;
@@ -333,6 +491,7 @@ OpTree* RDFTRexRuleParser::recursivelyNavigateExpression(RDFTESLAParser::ExprCon
 				RulePktValueReference* ref  = new RulePktValueReference(aggregateCount);
 				aggregateCount++;
 				delete name;
+				delete c;
 				return new OpTree(ref, valType);
 			}
 		}

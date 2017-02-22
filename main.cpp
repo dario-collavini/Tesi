@@ -66,12 +66,7 @@ int main(int argc, char* argv[])
 	parser.parse(str, store, e, constructor);
 
 //Subscription
-	Constraint c[1];
-	strcpy(c[0].name, "value");
-	c[0].type = INT;
-	c[0].op = GT;
-	c[0].intVal = 140;
-	SubPkt *sub = new SubPkt(3, c, 1);
+	SubPkt *sub = new SubPkt(3);
 	RDFResultListener *listener = new TestRDFListener(sub);
 	constructor->addRDFListener(listener);
 
