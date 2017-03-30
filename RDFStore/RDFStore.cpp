@@ -54,16 +54,12 @@ void RDFStore::initialize(const char* type, const char* kb, const char* dlog, co
 	this->prefixesArrayLength = prefixesLength;
 	RDFoxDataStore_Create(this->store, this->type, NULL , 0);
 	RDFoxDataStore_Initialize(*(this->store));
-	std::cout << "1. Inizializzato un Data Store di tipo " << this->type << "\n";
 	RDFoxDataStore_ImportFile(*(this->store), this->kb , 0, false);
-	std::cout << "2. Import file kbradio (triple importate ma non materializzate)\n";
 	RDFoxDataStore_ImportFile(*(this->store), this->dlogRules , 0, false);
-	std::cout << "3. Import file regole datalog\n";
 	RDFoxDataStore_ApplyRules(*(this->store), false);
-	std::cout << "4. Materializzazione triple...\n";
 }
 
-//Founds var specified in the query string
+//Finds var specified in the query string
 std::vector<std::string> getVars(std::string query, int all){
 	std::vector<std::string> var;
 	std::string temp;

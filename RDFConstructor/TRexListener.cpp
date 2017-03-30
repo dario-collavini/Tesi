@@ -48,8 +48,8 @@ RDFEvent* createRDF(PubPkt* pkt, Template* templateCE){
 		strcpy(t.object, it->object.second.c_str());
 		event->triples.push_back(t);
 	}
-	for(int i = 0; i < pkt->getAttributesNum(); i++){
-		att = pkt->getAttribute(i);
+	for(int k = 0; k < pkt->getAttributesNum(); k++){
+		att = pkt->getAttribute(k);
 		varName = att.name;
 		attributesMap.insert(std::make_pair(varName, att)); //attributes saved for final evaluation of subscriptions
 		for(unsigned int i = 0; i < templateCE->triples.size(); i++){
